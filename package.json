@@ -1,0 +1,12 @@
+{
+  "name": "gestor-psicologico",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Demo navegable de Gestor Psicológico con pruebas automáticas",
+  "scripts": {
+    "test": "node tests/gestor.test.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.50.0"
+  }
+}
