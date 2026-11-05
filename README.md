@@ -1,6 +1,6 @@
 # Gestor Psicológico (demo)
 
-Demo navegable de un software de gestión para psicólogos y clínicas: login por roles, dashboard, CRM de pacientes, expediente clínico con pestañas, agenda, flujo de IA (audio → transcripción → resumen → SOAP → supervisor IA → seguimiento), radar clínico, seguimiento por WhatsApp, facturación, planes y equipo clínico.
+Demo navegable de un software de gestión para psicólogos y clínicas: login por roles, dashboard, CRM de pacientes, expediente clínico con pestañas, agenda, flujo de IA (audio → transcripción → resumen → SOAP → supervisor IA → seguimiento), radar clínico, seguimiento por WhatsApp, facturación, planes y equipo clínico. Incluye además una Biblioteca con enlaces a fuentes abiertas y documentos oficiales del Colegio de Psicólogos del Perú, escalas GAD-7 y PHQ-9 con puntaje automático y alerta del ítem 9, un portal del paciente con reserva de citas y un resumen del expediente para copiar.
 
 Es un único archivo, `index.html`, sin dependencias ni paso de compilación. Ábrelo en el navegador.
 
@@ -35,7 +35,7 @@ Baterías: `functional`, `security`, `usability`, `devicesSuite`, `contrast`.
 
 | Batería | Qué comprueba |
 |---|---|
-| functional | Roles, datos por perfil, búsqueda, expediente, agenda, flujo IA, radar, WhatsApp, facturación, recorrido |
+| functional | Roles, datos por perfil, búsqueda, expediente, escalas, resumen, portal y reserva, agenda, flujo IA, radar, WhatsApp, facturación, recorrido |
 | security | Sin XSS, control de acceso por URL, aislamiento entre psicólogos, limpieza al cerrar sesión, sin red ni almacenamiento |
 | usability | Teclado, foco visible y controles sin efecto |
 | devicesSuite | Pixel 7, Galaxy S9+, iPhone 14, iPhone SE, iPad y escritorio: sin desborde, sin botones tapados, objetivos táctiles de 44 px |

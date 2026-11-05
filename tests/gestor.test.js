@@ -95,6 +95,54 @@ async function functional(browser) {
   const sep = await p.evaluate(() => { const k = [...document.querySelector('[role="tabpanel"]').children]; const a = k[0].getBoundingClientRect(), b = k[1].getBoundingClientRect(); return b.top - a.bottom; });
   ok(sep >= 12, 'Ficha: separación vertical entre tarjetas de al menos 12 px (' + Math.round(sep) + ')');
   const kfill = await p.evaluate(() => 0);
+  // Escalas
+  await p.click('[data-t="esc"]');
+  ok(await p.$eval('[data-a="scsave"]', (b) => b.disabled), 'Escalas: guardar está deshabilitado hasta responder todo');
+  for (let i = 0; i < 7; i++) await p.check(`#gad-${i}-1`);
+  let box = await txt(p, '#scoreBox');
+  ok(/7\s*\/\s*21/.test(box) && box.includes('leve'), 'GAD-7: siete respuestas de 1 punto dan 7/21 (leve)');
+  ok(await p.$eval('[data-a="scsave"]', (b) => !b.disabled), 'GAD-7: guardar se habilita al completar');
+  for (let i = 0; i < 7; i++) await p.check(`#gad-${i}-3`);
+  box = await txt(p, '#scoreBox');
+  ok(/21\s*\/\s*21/.test(box) && box.includes('severa'), 'GAD-7: el máximo es 21/21 (severa)');
+  await p.click('[data-a="scsave"]');
+  ok((await txt(p, '[role="tabpanel"]')).includes('21 puntos'), 'GAD-7: el resultado guardado aparece en el historial');
+  ok(await p.$eval('[data-a="scsave"]', (b) => b.disabled), 'GAD-7: tras guardar el formulario se reinicia');
+  await p.click('[data-k="phq"]');
+  for (let i = 0; i < 9; i++) await p.check(`#phq-${i}-0`);
+  ok(!(await p.isVisible('#scoreBox .alert')), 'PHQ-9: sin alerta si el ítem 9 es 0');
+  await p.check('#phq-8-1');
+  box = await txt(p, '#scoreBox');
+  ok(await p.isVisible('#scoreBox .alert') && box.includes('Ítem 9'), 'PHQ-9: un ítem 9 positivo muestra la alerta clínica');
+  ok(/1\s*\/\s*27/.test(box) && box.includes('mínima'), 'PHQ-9: 1/27 es mínima');
+  for (let i = 0; i < 9; i++) await p.check(`#phq-${i}-2`);
+  ok((await txt(p, '#scoreBox')).includes('moderadamente severa'), 'PHQ-9: 18 puntos es moderadamente severa');
+
+  // Resumen para copiar
+  await p.click('[data-a="sum"]');
+  const ta = await p.$eval('#sumta', (t) => t.value);
+  ok(ta.includes('Ana Ramírez') && ta.includes('PAC-0001') && ta.includes('Registrado en la demo: GAD-7 21'), 'Resumen: incluye paciente, ID y lo registrado en la demo');
+  await p.click('[data-a="copysum"]');
+  ok(await p.isVisible('#toast'), 'Resumen: copiar muestra un aviso');
+  await p.click('[data-a="sumx"]');
+  ok(!(await p.$('#sumta')), 'Resumen: se puede cerrar');
+
+  // Portal del paciente y reserva
+  await p.click('[data-a="go"][data-r="portal"]');
+  ok((await txt(p, '#view h1')).includes('Hola, Ana'), 'Portal: saluda al paciente');
+  ok((await txt(p, 'main')).includes('Mañana · 09:00'), 'Portal: muestra la próxima cita');
+  const slots = await p.$$('[data-a="slot"]');
+  ok(slots.length >= 10, `Portal: hay horarios disponibles (${slots.length})`);
+  ok(await p.$eval('[data-a="book"]', (b) => b.disabled), 'Portal: confirmar está deshabilitado sin elegir horario');
+  const k0 = await slots[0].getAttribute('data-k'), t0 = await slots[0].getAttribute('data-t');
+  await slots[0].click();
+  await p.click('[data-a="book"]');
+  ok((await txt(p, 'main')).includes('Reserva enviada'), 'Portal: la reserva se confirma en pantalla');
+  ok((await p.$$(`[data-a="slot"][data-k="${k0}"][data-t="${t0}"]`)).length === 0, 'Portal: el horario reservado deja de estar disponible');
+  await go(p, 'agenda');
+  await p.click(`.cal button[data-d="${+k0.slice(8)}"]`);
+  ok((await txt(p, 'main')).includes(t0) && (await txt(p, 'main')).includes('Pendiente'), 'La reserva aparece en la agenda como Pendiente');
+
   // Agenda
   await go(p, 'agenda');
   ok((await txt(p, 'main')).includes('Noviembre 2026'), 'Agenda abre en noviembre 2026');
@@ -254,6 +302,10 @@ async function security(browser) {
   ok(['Rodrigo Paredes', 'Lucía Campos', 'Valeria Núñez'].includes(nombre), `Dra. Torres con #ficha ve solo un paciente propio (${nombre})`);
   const todo = await p.evaluate(() => document.body.innerText);
   ok(!/Ana Ramírez|José Salas|Luis Fernández/.test(todo), 'Dra. Torres no ve pacientes del Dr. Mendoza en ninguna parte de la página');
+  await p.evaluate(() => { location.hash = 'portal'; });
+  await p.waitForTimeout(80);
+  ok(/Hola, (Rodrigo|Lucía|Valeria)/.test(await txt(p, '#view h1')), 'Dra. Torres con #portal ve solo un paciente propio');
+  ok(!/Ana Ramírez|José Salas|Luis Fernández/.test(await txt(p, 'main')), 'El portal no muestra pacientes ajenos');
   await go(p, 'radar');
   const opts = await p.$$eval('#rsel option', (o) => o.map((x) => x.textContent));
   ok(opts.length === 3 && !opts.includes('Ana Ramírez'), 'El selector del radar solo lista pacientes propios');
@@ -291,7 +343,7 @@ async function clickability(page, label, minH) {
       if (r.width === 0 || r.height === 0 || cs.visibility === 'hidden' || el.closest('[hidden]') || el.closest('.side:not(.open)') && innerWidth <= 900) return;
       if (el.matches('tr.clk')) return;
       const x = Math.min(innerWidth - 1, Math.max(0, r.left + r.width / 2)), y = r.top + r.height / 2;
-      if (y < 0 || y > innerHeight) { el.scrollIntoView({ block: 'center' }); }
+      if (r.top < 0 || r.bottom > innerHeight) { el.scrollIntoView({ block: 'center' }); }
       const r2 = el.getBoundingClientRect(), y2 = r2.top + r2.height / 2;
       const top = document.elementFromPoint(x, y2);
       if (!top || !(el === top || el.contains(top) || top.contains(el))) bad.push((el.dataset.a || el.id || el.tagName) + ' tapado por ' + (top ? (top.id || top.className || top.tagName) : 'nada'));
@@ -398,6 +450,16 @@ async function devicesSuite(browser) {
     await p.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
     await p.evaluate(() => window.scrollTo(0, 0)); await p.screenshot({ path: path.join(OUT, slug + '_ficha_oscuro.png') });
 
+    await p.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+    await p.click('[data-t="esc"]'); await p.waitForTimeout(60);
+    o = await overflowX(p); if (o.sw > o.iw + 1 || o.off.length) probs.overflow.push('escalas ' + o.sw + '>' + o.iw + ' ' + o.off.join(','));
+    c = await clickability(p, 'escalas', minH); probs.bad.push(...c.bad.map((x) => 'escalas:' + x)); probs.small.push(...c.small.map((x) => 'escalas:' + x));
+    await p.evaluate(() => window.scrollTo(0, 0)); await p.screenshot({ path: path.join(OUT, slug + '_escalas.png') });
+    await p.evaluate(() => window.scrollTo(0, 0));
+    await p.click('[data-a="go"][data-r="portal"]'); await p.waitForTimeout(60);
+    o = await overflowX(p); if (o.sw > o.iw + 1 || o.off.length) probs.overflow.push('portal ' + o.sw + '>' + o.iw + ' ' + o.off.join(','));
+    c = await clickability(p, 'portal', minH); probs.bad.push(...c.bad.map((x) => 'portal:' + x)); probs.small.push(...c.small.map((x) => 'portal:' + x));
+    await p.evaluate(() => window.scrollTo(0, 0)); await p.screenshot({ path: path.join(OUT, slug + '_portal.png') });
     ok(probs.overflow.length === 0, `${label}: sin desplazamiento horizontal en ninguna pantalla ${probs.overflow.join(' | ')}`);
     ok(probs.bad.length === 0, `${label}: ningún botón tapado por otro elemento ${probs.bad.slice(0, 4).join(' | ')}`);
     ok(probs.small.length === 0, `${label}: objetivos táctiles suficientes (44 px en pantallas táctiles, 34 px en escritorio) ${probs.small.slice(0, 5).join(' | ')}`);
@@ -425,8 +487,9 @@ async function contrast(browser) {
     const fails = new Map();
     await login(p, 'admin');
     await p.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
-    for (const r of ROUTES.adm) {
+    for (const r of ROUTES.adm.concat(['ficha', 'portal'])) {
       await p.evaluate((h) => { location.hash = h; }, r); await p.waitForTimeout(80);
+      if (r === 'ficha') { await p.click('[data-t="esc"]'); await p.click('[data-k="phq"]'); await p.check('#phq-8-1'); }
       if (r === 'facturacion') await p.click('[data-a="bt"][data-v="planes"]');
       const res = await p.evaluate(() => {
         const parse = (s) => { const m = s.match(/rgba?\(([^)]+)\)/); if (!m) return null; const a = m[1].split(',').map(Number); return { r: a[0], g: a[1], b: a[2], a: a[3] === undefined ? 1 : a[3] }; };
