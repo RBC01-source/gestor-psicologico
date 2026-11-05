@@ -46,3 +46,7 @@ Las capturas por dispositivo se guardan en `tests/shots/`.
 Los dispositivos se emulan con Chrome. No sustituyen una prueba en un iPhone o iPad reales, porque Safari usa otro motor (WebKit).
 
 Si Chrome no está en `/usr/bin/google-chrome`, define `CHROME_PATH`.
+
+## Versión pública (sin modo administrador)
+
+`npm run build:publico` genera `dist/index.html` sin el perfil de administrador, y `npm run test:publico` comprueba que no se pueda entrar como administrador. Esa versión es la que se publica en la rama `gh-pages` (GitHub Pages). La versión completa queda en `index.html` de la rama `main`.

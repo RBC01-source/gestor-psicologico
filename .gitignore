@@ -2,3 +2,4 @@ node_modules/
 tests/shots/
 tests/resultado.json
 .DS_Store
+dist/

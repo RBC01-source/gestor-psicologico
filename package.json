@@ -4,7 +4,9 @@
   "private": true,
   "description": "Demo navegable de Gestor Psicológico con pruebas automáticas",
   "scripts": {
-    "test": "node tests/gestor.test.js"
+    "test": "node tests/gestor.test.js",
+    "build:publico": "node scripts/build-publico.js",
+    "test:publico": "node scripts/build-publico.js && node tests/publico.test.js"
   },
   "devDependencies": {
     "playwright": "^1.50.0"
