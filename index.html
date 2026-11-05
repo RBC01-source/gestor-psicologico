@@ -1,0 +1,1000 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Gestor Psicológico</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: pantalla de acceso dividida (panel de marca + formulario); después un shell de app con barra lateral oscura y área de trabajo donde se pintan los módulos. */
+:root{
+  --bg:#F0F4F3; --surface:#FFFFFF; --surface2:#F6F9F8; --ink:#12201E; --muted:#587069; --line:#D9E2E0;
+  --accent:#1B6B64; --accent-ink:#FFFFFF; --accent-soft:#E0EFEC;
+  --good:#2A7A4B; --good-soft:#E1F1E8; --warn:#8A520A; --warn-soft:#F8EBD2; --crit:#B83A2E; --crit-soft:#F9E3E0; --info:#2F6E9E; --info-soft:#E1EDF6;
+  --side:#0D2825; --side-ink:#C5DBD7; --side-active:#1A4640;
+  --c1:#1B6B64; --c2:#B9732A; --c3:#2F6E9E;
+  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif; --f-body:'Figtree','Segoe UI',system-ui,sans-serif; --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1312; --surface:#142120; --surface2:#101B1A; --ink:#E5EFED; --muted:#93A9A4; --line:#263634;
+  --accent:#5CC2B4; --accent-ink:#06201D; --accent-soft:#17322F;
+  --good:#6CCB92; --good-soft:#15301F; --warn:#E3B05B; --warn-soft:#342711; --crit:#F08A7E; --crit-soft:#3A1B18; --info:#7FB6E0; --info-soft:#132B3D;
+  --side:#08100F; --side-ink:#B4CBC6; --side-active:#16312E;
+  --c1:#5CC2B4; --c2:#E0A054; --c3:#7FB6E0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1312; --surface:#142120; --surface2:#101B1A; --ink:#E5EFED; --muted:#93A9A4; --line:#263634;
+  --accent:#5CC2B4; --accent-ink:#06201D; --accent-soft:#17322F;
+  --good:#6CCB92; --good-soft:#15301F; --warn:#E3B05B; --warn-soft:#342711; --crit:#F08A7E; --crit-soft:#3A1B18; --info:#7FB6E0; --info-soft:#132B3D;
+  --side:#08100F; --side-ink:#B4CBC6; --side-active:#16312E;
+  --c1:#5CC2B4; --c2:#E0A054; --c3:#7FB6E0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14.5px;line-height:1.5;-webkit-text-size-adjust:100%}
+h1,h2,h3,p{margin:0}
+h1{font:600 26px/1.15 var(--f-display);letter-spacing:-.01em;text-wrap:balance}
+h2{font:600 17px/1.25 var(--f-display);text-wrap:balance}
+h3{font:650 14px/1.3 var(--f-body)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* buttons, pills, inputs */
+.btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;min-height:40px;padding:8px 15px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:13.5px;text-decoration:none}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.sm{min-height:36px;padding:5px 11px;font-size:12.5px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap;background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.pill.good{background:var(--good-soft);color:var(--good);border-color:transparent}
+.pill.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.pill.crit{background:var(--crit-soft);color:var(--crit);border-color:transparent}
+.pill.info{background:var(--info-soft);color:var(--info);border-color:transparent}
+.input{width:100%;min-height:44px;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-size:16px}
+.input:focus{border-color:var(--accent)}
+label.lb{display:block;font-weight:600;font-size:13px;margin:0 0 6px}
+
+/* login */
+#login{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+.brandp{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;justify-content:space-between;gap:32px;padding-block:40px}
+.brandp h1{color:#fff;font-size:clamp(28px,3.4vw,42px);max-width:15ch}
+.brandp .lead{max-width:44ch;font-size:15.5px}
+.logo{display:flex;align-items:center;gap:10px;font:600 17px var(--f-display);color:inherit}
+.logo svg{width:34px;height:34px}
+.mini{background:#12332F;border:1px solid #24504A;border-radius:12px;padding:16px;max-width:430px;color:#D6E8E4}
+.mini .row{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:6px 0;border-top:1px solid #24504A;font-size:13.5px}
+.mini .row:first-of-type{border-top:0}
+.mini b{font-family:var(--f-mono);color:#7ED3C7}
+.mini .hd{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:8px;color:#9DBFB8}
+.prices{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:13.5px}
+.prices b{color:#fff;font-family:var(--f-mono);font-weight:500}
+.formp{display:flex;align-items:center;justify-content:center;padding-block:40px}
+.formc{width:100%;max-width:420px;display:grid;gap:18px}
+.roles{display:grid;gap:8px}
+.role{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+.role[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.av{width:36px;height:36px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:600 13px var(--f-display);flex:none}
+.av.lg{width:56px;height:56px;font-size:19px}
+.note{font-size:12.5px;color:var(--muted)}
+.note a{display:inline-block;padding:13px 0;min-height:44px}
+
+/* app shell */
+#app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{background:var(--side);color:var(--side-ink);position:sticky;top:0;align-self:start;height:100vh;height:100dvh;display:flex;flex-direction:column;gap:18px;padding:18px 12px 14px max(14px,env(safe-area-inset-left,0px));overflow-y:auto;z-index:30}
+.side .logo{color:#fff;padding:2px 6px}
+.nav{display:grid;gap:2px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;min-height:42px;padding:8px 11px;border:0;border-radius:9px;background:none;color:inherit;text-align:left;font-weight:500}
+.nav button:hover{background:rgba(255,255,255,.06)}
+.nav button[aria-current="page"]{background:var(--side-active);color:#fff}
+.side .foot{margin-top:auto;display:grid;gap:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:12px}
+.uchip{display:flex;gap:10px;align-items:center;padding:4px 6px}
+.uchip .av{background:#1F4D47;color:#fff}
+.uchip b{display:block;color:#fff;font-size:13.5px;line-height:1.2}
+.uchip span{font-size:12px}
+.side .btn{background:transparent;border-color:rgba(255,255,255,.18);color:var(--side-ink)}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:60px;padding-block:10px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:env(safe-area-inset-top,0px);z-index:20}
+.top .ttl{font:600 16px var(--f-display);margin-right:auto}
+.menub{display:none}
+.view{padding-block:22px 80px;display:grid;gap:20px;align-content:start;min-width:0}
+.view>*{min-width:0}
+.hd2{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}
+.hd2 p{color:var(--muted);margin-top:4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}
+.card>h2,.card>.ch{margin-bottom:12px}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.g2{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.g3{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}
+.gk{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.kpi .l{font-size:12.5px;color:var(--muted);font-weight:500}
+.kpi .v{font:600 28px/1.15 var(--f-display);margin-top:2px;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--muted);margin-top:2px}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr.clk{cursor:pointer}
+tr.clk:hover td{background:var(--surface2)}
+.pn{display:flex;gap:10px;align-items:center}
+.pn b{display:block;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:36px;padding:5px 13px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-weight:500;font-size:13px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{min-height:44px;padding:8px 14px;border:0;border-bottom:2px solid transparent;background:none;font-weight:600;color:var(--muted);white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.list{display:grid}
+.li{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.li:last-child{border-bottom:0}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 18px}
+.kv dt{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.kv dd{margin:2px 0 0;font-weight:600}
+.meter{height:8px;border-radius:9px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent)}
+.meter.warn i{background:var(--warn)}.meter.crit i{background:var(--crit)}.meter.good i{background:var(--good)}
+.hb{display:grid;grid-template-columns:minmax(110px,170px) 1fr 34px;gap:10px;align-items:center;padding:5px 0}
+details{border:1px solid var(--line);border-radius:10px;padding:0 14px;background:var(--surface)}
+details+details{margin-top:10px}
+summary{cursor:pointer;min-height:46px;display:flex;align-items:center;gap:10px;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'+';margin-left:auto;font-size:18px;color:var(--muted)}
+details[open] summary::after{content:'−'}
+.soap{display:grid;gap:10px;padding-bottom:14px}
+.soap div{display:grid;grid-template-columns:30px 1fr;gap:10px}
+.soap b{width:26px;height:26px;border-radius:7px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:600 13px var(--f-mono)}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+
+.lk{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:6px 2px;color:var(--accent);font-weight:600;text-decoration:none;border-top:1px solid var(--line)}
+.lk::after{content:'↗';font-weight:500;color:var(--muted)}
+.lk:hover{text-decoration:underline}
+.bib{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));margin-top:14px}
+.bib>div{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--surface2);display:grid;gap:4px;align-content:start}
+.bib h3{display:flex;gap:10px;align-items:flex-start;margin-bottom:6px}
+.cap{flex:none;display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:7px;background:var(--accent-soft);color:var(--accent);font:600 12.5px var(--f-mono)}
+.nl{margin:0;padding-left:18px;display:grid;gap:6px}
+
+.q{border:0;margin:0;padding:12px 0;display:grid;gap:8px;border-bottom:1px solid var(--line);min-width:0}
+.q legend{font-weight:600;padding:0 0 6px}
+.opts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.opts label{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;min-height:44px;padding:6px 8px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:13px;cursor:pointer}
+.opts input{position:absolute;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);margin:0;opacity:0;cursor:pointer}
+.opts label:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.opts label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.sc2{display:grid;gap:16px;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);align-items:start}
+.sc2 .score{position:sticky;top:76px}
+.alert{border:1px solid var(--crit);background:var(--crit-soft);color:var(--crit);padding:12px;border-radius:10px;font-weight:600}
+.slots{display:flex;flex-wrap:wrap;gap:8px}
+.cons-text{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px 14px;font-size:13.5px;background:var(--surface);margin:12px 0}
+.cons-text p{margin:10px 0}
+.cons-text:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ckset{border:0;margin:0;padding:0;display:grid;gap:8px}
+.ckset legend{font-weight:600;margin-bottom:8px;padding:0}
+.ck{position:relative;display:flex;gap:12px;align-items:flex-start;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer}
+.ck input{position:absolute;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);margin:0;opacity:0;cursor:pointer}
+.ck .bx{flex:none;width:22px;height:22px;border:2px solid var(--muted);border-radius:6px;margin-top:1px;display:grid;place-items:center}
+.ck:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.ck:has(input:checked) .bx{background:var(--accent);border-color:var(--accent)}
+.ck:has(input:checked) .bx::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.ck:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:900px){.sc2{grid-template-columns:1fr}.sc2 .score{position:static}}
+@media (max-width:600px){.opts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* charts */
+.chart{width:100%;height:auto;display:block}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .t{fill:var(--muted);font:11px var(--f-body)}
+.chart .tv{font:600 12px var(--f-mono)}
+.chart .tv.c1{fill:var(--c1)}.chart .tv.c2{fill:var(--c2)}.chart .tv.c3{fill:var(--c3)}
+.chart .ln{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.chart .ln.c1{stroke:var(--c1)}.chart .ln.c2{stroke:var(--c2)}.chart .ln.c3{stroke:var(--c3)}
+.chart .area{opacity:.13}.chart .area.c1{fill:var(--c1)}
+.chart .dot{stroke:var(--surface);stroke-width:2}.chart .dot.c1{fill:var(--c1)}.chart .dot.c2{fill:var(--c2)}.chart .dot.c3{fill:var(--c3)}
+.chart .bar{fill:var(--c1);opacity:.35}.chart .bar.hi{opacity:1}
+.chart .ring{fill:none;stroke:var(--line)}
+.chart .rp{stroke-width:2}
+.chart .rp.c1{stroke:var(--c1);fill:var(--c1);fill-opacity:.22}
+.chart .rp.c2{stroke:var(--c2);fill:none}
+.chart .rp.c3{stroke:var(--muted);fill:none;stroke-dasharray:5 4}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+
+/* AI flow */
+.flow{display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px;align-items:start}
+.steps{display:grid;gap:0;position:sticky;top:76px}
+.stp{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:9px 0;color:var(--muted)}
+.stp .n{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font:500 12px var(--f-mono);background:var(--surface)}
+.stp.done{color:var(--ink)}.stp.done .n{background:var(--good);border-color:var(--good);color:#fff}
+.stp.act{color:var(--ink)}.stp.act .n{border-color:var(--accent);color:var(--accent)}
+.stp b{display:block;font-size:13.5px}.stp span{font-size:12px}
+.spin{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent-soft);border-top-color:var(--accent);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.out{display:grid;gap:14px}
+.out .card{animation:in .35s ease both}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.drop{display:grid;gap:12px;justify-items:center;text-align:center;padding:36px 20px;border:1.5px dashed var(--line);border-radius:12px;background:var(--surface2)}
+.file{display:inline-flex;gap:10px;align-items:center;padding:8px 14px;border-radius:9px;background:var(--surface);border:1px solid var(--line);font-family:var(--f-mono);font-size:13px}
+.wave{display:flex;align-items:center;gap:3px;height:40px}
+.wave i{width:3px;border-radius:3px;background:var(--accent);opacity:.7}
+.tl{display:grid;gap:10px}
+.tl .ln1{display:grid;grid-template-columns:58px 86px 1fr;gap:10px;align-items:baseline}
+.tl .who{font-weight:650;font-size:12.5px}.tl .who.p{color:var(--c2)}.tl .who.t{color:var(--accent)}
+.sg{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+.sg>div{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface2)}
+.sg b.k{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font:600 12.5px var(--f-mono);margin-bottom:6px}
+.ai-note{font-size:12px;color:var(--muted)}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal .dh{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:center;padding:4px 0}
+.cal button{min-height:58px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:5px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;text-align:left}
+.cal button.off{background:transparent;border-color:transparent;cursor:default}
+.cal button.we{background:var(--surface2)}
+.cal button.today b{color:var(--accent-ink);background:var(--accent);border-radius:50%;width:24px;height:24px;display:grid;place-items:center}
+.cal button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.cal em{font-style:normal;font:500 11px var(--f-mono);color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:0 6px}
+.calnav{display:flex;align-items:center;gap:8px}
+
+/* whatsapp phone */
+.phone{width:100%;max-width:340px;margin-inline:auto;border:1px solid var(--line);border-radius:26px;overflow:hidden;background:var(--surface)}
+.ph-h{display:flex;gap:10px;align-items:center;padding:12px 14px;background:var(--accent);color:var(--accent-ink)}
+.ph-h .av{background:rgba(255,255,255,.22);color:inherit;width:34px;height:34px}
+.ph-b{padding:12px;min-height:360px;background:var(--surface2);display:flex;flex-direction:column;gap:6px}
+.bub{max-width:86%;padding:8px 11px;border-radius:12px;font-size:13.5px;border:1px solid var(--line);background:var(--surface);animation:in .3s ease both}
+.bub.me{margin-left:auto;background:var(--accent-soft);border-color:transparent}
+.bub .acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.bub .tm{display:block;text-align:right;font-size:11px;color:var(--muted);margin-top:2px}
+.tg{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.tg:last-child{border-bottom:0}
+.sw{position:relative;width:56px;height:44px;border:0;background:none;flex:none;padding:0}
+.sw::before{content:'';position:absolute;left:2px;top:9px;width:52px;height:26px;border-radius:99px;border:1px solid var(--line);background:var(--surface2)}
+.sw::after{content:'';position:absolute;top:12px;left:5px;width:20px;height:20px;border-radius:50%;background:var(--muted);transition:transform .2s}
+.sw[aria-checked="true"]::before{background:var(--accent);border-color:var(--accent)}
+.sw[aria-checked="true"]::after{transform:translateX(26px);background:#fff}
+
+/* plans */
+.plan{display:flex;flex-direction:column;gap:12px}
+.plan.cur{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.plan .pr{font:600 38px var(--f-display)}
+.plan ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plan li::before{content:'✓';color:var(--good);font-weight:700;margin-right:8px}
+.plan .btn{margin-top:auto}
+
+/* toast + tour */
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:13.5px;z-index:80;max-width:calc(100vw - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.tour{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(360px,calc(100vw - 32px));background:var(--ink);color:var(--bg);border-radius:14px;padding:14px 16px;z-index:70;box-shadow:0 10px 30px rgba(0,0,0,.3);display:grid;gap:10px}
+.tour .btn{background:transparent;color:var(--bg);border-color:rgba(255,255,255,.3)}
+.tour .btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tour .tr{display:flex;gap:8px;justify-content:space-between;align-items:center}
+.scrim{display:none}
+[role="tabpanel"]{display:grid;gap:16px;min-width:0}
+.gk.k8{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:1000px){.gk.k8{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+@media (max-width:1100px){.flow{grid-template-columns:1fr}.steps{position:static;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));column-gap:10px}}
+@media (max-width:900px){
+  #login{grid-template-columns:1fr}
+  .brandp{padding-block:24px;gap:20px}.brandp .mini,.brandp .prices{display:none}
+  #app{grid-template-columns:1fr}
+  .side{position:fixed;left:0;top:0;bottom:0;width:272px;transform:translateX(-102%);transition:transform .22s ease;padding-top:calc(18px + env(safe-area-inset-top,0px))}
+  .side.open{transform:none;box-shadow:8px 0 30px rgba(0,0,0,.3)}
+  .scrim.on{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:25}
+  .menub{display:inline-flex}
+  h1{font-size:23px}
+}
+@media (max-width:520px){
+  .cal{gap:3px}.cal button{min-height:50px;padding:4px}.cal em{padding:0 4px}
+  .tl .ln1{grid-template-columns:1fr}
+  .hb{grid-template-columns:100px 1fr 30px}
+  .top .demo{display:none}
+}
+@media (pointer:coarse){.btn,.btn.sm,.chip,.nav button{min-height:44px}.tabs button{min-height:48px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div id="login" class="gut-wrap">
+  <section class="brandp gut" aria-label="Presentación del producto">
+    <div class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#5B3F8C"/><path d="M9 8v4.5a7 7 0 0 0 14 0V8M16 8v16.5M11.5 24.5h9" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="5.2" r="1.6" fill="#F2C94C"/></svg>Gestor Psicológico</div>
+    <div style="display:grid;gap:16px">
+      <h1>Eficiencia y atención a la medida</h1>
+      <p class="lead">Audio de la sesión, transcripción, nota SOAP, seguimiento por WhatsApp y métricas de la clínica en un solo lugar.</p>
+    </div>
+    <div class="mini" aria-hidden="true">
+      <div class="hd"><span>ana_sesion_12.mp3 · 48 min</span><span>Procesado</span></div>
+      <div class="row"><b>S</b><span>Refiere preocupación constante por rendimiento laboral.</span></div>
+      <div class="row"><b>O</b><span>Discurso coherente. Orientada en tiempo y espacio.</span></div>
+      <div class="row"><b>A</b><span>Mejor reconocimiento de detonantes emocionales.</span></div>
+      <div class="row"><b>P</b><span>Respiración, registro de pensamientos, límites laborales.</span></div>
+    </div>
+    <div class="prices"><span>Basic <b>US$19</b></span><span>Pro <b>US$49</b></span><span>Clínica <b>US$99</b></span></div>
+  </section>
+  <section class="formp gut">
+    <form class="formc" id="lf" autocomplete="off" novalidate>
+      <div><h2 style="font-size:22px">Iniciar sesión</h2><p class="muted" style="margin-top:4px">Demo con datos simulados. Elige un perfil para ver qué cambia según el rol.</p></div>
+      <div class="roles" id="roles" role="group" aria-label="Perfil de la demo"></div>
+      <div><label class="lb" for="em">Correo electrónico</label><input class="input" id="em" type="email" inputmode="email" autocomplete="off" maxlength="80"></div>
+      <div><label class="lb" for="pw">Contraseña</label><input class="input" id="pw" type="password" autocomplete="off" maxlength="40" value="demo-sin-clave"></div>
+      <div id="lerr" class="small" role="alert" style="color:var(--crit)" hidden></div>
+      <button class="btn pri" type="submit" id="lgo">Iniciar sesión</button>
+      <p class="note"><a href="#" data-a="forgot">¿Olvidó su contraseña?</a><br>Esta demo no valida contraseñas, no guarda datos y no envía nada a ningún servidor.</p>
+    </form>
+  </section>
+</div>
+
+<div id="app" hidden>
+  <aside class="side" id="side" aria-label="Menú principal">
+    <div class="logo"><svg viewBox="0 0 32 32" aria-hidden="true" style="width:30px;height:30px"><rect width="32" height="32" rx="9" fill="#5B3F8C"/><path d="M9 8v4.5a7 7 0 0 0 14 0V8M16 8v16.5M11.5 24.5h9" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="5.2" r="1.6" fill="#F2C94C"/></svg>Gestor Psicológico</div>
+    <nav class="nav" id="nav" aria-label="Módulos"></nav>
+    <div class="foot">
+      <div class="uchip" id="uchip"></div>
+      <button class="btn sm" data-a="logout" id="outb">Cerrar sesión</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" data-a="menu"></div>
+  <div class="main">
+    <header class="top gut">
+      <button class="btn sm menub" data-a="menu" aria-label="Abrir menú" id="menub"></button>
+      <div class="ttl" id="ttl"></div>
+      <span class="pill info demo">Datos simulados · jue 5 nov 2026</span>
+      <button class="btn sm" data-a="tour" id="tourb">Recorrido de 3 min</button>
+      <button class="btn sm" data-a="theme" id="themeb" aria-label="Cambiar tema claro u oscuro"></button>
+    </header>
+    <main class="view gut" id="view" tabindex="-1"></main>
+  </div>
+</div>
+<div id="tourbox" class="tour" hidden role="dialog" aria-label="Recorrido guiado"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+'use strict';
+/* ---------- utilidades ---------- */
+var $=function(s,r){return (r||document).querySelector(s)};
+var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var pad=function(n){return (n<10?'0':'')+n};
+var nf=function(n){return Number(n).toLocaleString('en-US')};
+var clamp=function(v){return Math.max(0,Math.min(100,Math.round(v)))};
+var MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+var MESL=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+var DOW=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+var NOW=new Date(2026,10,5,10,12);
+var IC={
+grid:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.5-3.6 3.2-5.5 6.5-5.5s6 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14.6c2.3.2 4 1.7 4.5 4.4"/>',
+cal:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/>',
+spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18.5 16l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>',
+radar:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l5-5"/>',
+chat:'<path d="M4 5.5h16v10.5H9.5L5 20v-4H4z"/>',
+card:'<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h4"/>',
+person:'<circle cx="12" cy="7.5" r="3.5"/><path d="M5 20c.6-4 3.4-6 7-6s6.4 2 7 6"/>',
+gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/>',
+book:'<path d="M5 4.5h10.5A2.5 2.5 0 0 1 18 7v13H7.5A2.5 2.5 0 0 1 5 17.5z"/><path d="M5 17.5A2.5 2.5 0 0 1 7.5 15H18"/>',
+menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8"/>'
+};
+var icon=function(n){return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">'+IC[n]+'</svg>'};
+
+/* ---------- datos simulados ---------- */
+var OWN={carlos:'Dr. Carlos Mendoza',ana:'Dra. Ana Torres',laura:'Dra. Laura Villanueva',rojas:'Dr. José Rojas'};
+var US=[
+ {id:'carlos',n:'Dr. Carlos Mendoza',r:'psi',rl:'Psicólogo',e:'carlos.mendoza@gestorpsico.com',k:'carlos',sc:'own',ini:'CM',d:'Ve solo sus pacientes'},
+ {id:'ana',n:'Dra. Ana Torres',r:'psi',rl:'Psicóloga',e:'ana.torres@gestorpsico.com',k:'ana',sc:'own',ini:'AT',d:'Ve solo sus pacientes'},
+ {id:'patricia',n:'Patricia Rivas',r:'sup',rl:'Supervisora',e:'patricia.rivas@gestorpsico.com',k:'clinic',sc:'all',ini:'PR',d:'Ve todos los pacientes'}];
+var KPI={
+ carlos:{pac:84,sem:37,asi:92,can:4,ia:482,hr:126,ing:4850,wk:[29,33,31,35,34,36,38,37],as:[89,90,91,90,92,91,92,92]},
+ ana:{pac:68,sem:31,asi:94,can:3,ia:391,hr:102,ing:6420,wk:[24,27,26,29,28,30,31,31],as:[92,93,93,94,93,94,94,94]},
+ clinic:{pac:243,sem:131,asi:92,can:4,ia:1236,hr:318,ing:24380,wk:[104,111,109,118,121,127,133,131],as:[88,89,90,90,91,92,92,92]}};
+var PT=[
+ {id:'PAC-0001',n:'Ana Ramírez',age:32,tel:'+51 999 888 777',est:'Activa',mot:'Ansiedad relacionada al trabajo.',ses:12,ini:'2026-01-12',ult:'2026-11-03',rk:'Bajo',own:'carlos',a0:86,a1:61,e0:82,e1:58,comp:91,ab:12,av:72,evo:'Positiva',gad:[16,9],phq:[9,5],fix:[['2026-11-03','09:00'],['2026-11-06','09:00'],['2026-11-27','09:00']],pat:[['Perfeccionismo',9],['Validación externa',6],['Autoexigencia laboral',7],['Rumiación nocturna',4]]},
+ {id:'PAC-0002',n:'Luis Fernández',age:41,tel:'+51 987 412 365',est:'Activo',mot:'Burnout profesional.',ses:8,ini:'2026-06-15',ult:'2026-10-29',rk:'Moderado',own:'carlos',a0:74,a1:60,e0:84,e1:67,comp:76,ab:24,av:52,evo:'Moderada',gad:[13,10],phq:[11,8],sch:[[4,'10:00']],pat:[['Sobrecarga laboral',7],['Agotamiento emocional',6],['Culpa al descansar',3]]},
+ {id:'PAC-0003',n:'José Salas',age:22,tel:'+51 944 120 778',est:'Seguimiento intensivo',mot:'Ansiedad social.',ses:16,ini:'2026-02-02',ult:'2026-11-02',rk:'Alto',own:'carlos',a0:90,a1:78,e0:88,e1:74,comp:58,ab:41,av:38,evo:'Lenta',gad:[18,15],phq:[12,10],sch:[[4,'15:00'],[1,'15:00'],[3,'15:00']],pat:[['Evitación social',12],['Anticipación negativa',9],['Autocrítica',7]]},
+ {id:'PAC-0004',n:'María Gutiérrez',age:35,tel:'+51 955 310 224',est:'Activa',mot:'Duelo y adaptación.',ses:10,ini:'2026-04-20',ult:'2026-10-29',rk:'Bajo',own:'carlos',a0:70,a1:48,e0:66,e1:45,comp:88,ab:15,av:66,evo:'Positiva',gad:[12,7],phq:[14,8],sch:[[4,'11:30'],[2,'11:30']],pat:[['Duelo',8],['Culpa',5],['Aislamiento',3]]},
+ {id:'PAC-0005',n:'Claudia Reyna',age:29,tel:'+51 968 770 145',est:'Activa',mot:'Estrés y conflictos de pareja.',ses:6,ini:'2026-08-18',ult:'2026-10-27',rk:'Moderado',own:'carlos',a0:78,a1:64,e0:80,e1:66,comp:80,ab:22,av:45,evo:'Moderada',gad:[14,11],phq:[10,8],sch:[[4,'17:00']],pat:[['Conflicto de pareja',5],['Comunicación asertiva',4]]},
+ {id:'PAC-0006',n:'Sofía Delgado',age:44,tel:'+51 931 004 882',est:'Activa',mot:'Insomnio y rumiación.',ses:14,ini:'2026-02-23',ult:'2026-11-05',rk:'Bajo',own:'carlos',a0:72,a1:50,e0:70,e1:49,comp:90,ab:10,av:70,evo:'Positiva',gad:[11,6],phq:[9,5],sch:[[4,'08:00'],[1,'08:00']],pat:[['Rumiación nocturna',9],['Higiene del sueño',6]]},
+ {id:'PAC-0007',n:'Diego Ramos',age:36,tel:'+51 977 205 613',est:'Activo',mot:'Ansiedad generalizada.',ses:9,ini:'2026-05-05',ult:'2026-11-05',rk:'Bajo',own:'carlos',a0:80,a1:58,e0:77,e1:55,comp:85,ab:14,av:60,evo:'Positiva',gad:[15,8],phq:[8,5],sch:[[4,'09:00'],[2,'09:00']],pat:[['Preocupación excesiva',7],['Tensión corporal',4]]},
+ {id:'PAC-0008',n:'Rodrigo Paredes',age:47,tel:'+51 922 615 903',est:'Activo',mot:'Insomnio y estrés.',ses:9,ini:'2026-05-12',ult:'2026-10-28',rk:'Moderado',own:'ana',a0:76,a1:63,e0:79,e1:64,comp:66,ab:34,av:44,evo:'Moderada',gad:[12,10],phq:[10,9],sch:[[4,'16:00'],[1,'10:00']],pat:[['Insomnio de mantenimiento',6],['Estrés laboral',5]]},
+ {id:'PAC-0009',n:'Lucía Campos',age:26,tel:'+51 915 330 471',est:'Activa',mot:'Dificultades de pareja.',ses:5,ini:'2026-09-08',ult:'2026-10-29',rk:'Bajo',own:'ana',a0:68,a1:55,e0:70,e1:56,comp:84,ab:16,av:35,evo:'Moderada',gad:[10,8],phq:[9,7],sch:[[4,'12:30'],[3,'10:00']],pat:[['Comunicación',4],['Celos',3]]},
+ {id:'PAC-0010',n:'Valeria Núñez',age:31,tel:'+51 902 118 540',est:'Activa',mot:'Ansiedad generalizada.',ses:13,ini:'2026-02-09',ult:'2026-10-29',rk:'Bajo',own:'ana',a0:82,a1:52,e0:80,e1:50,comp:93,ab:8,av:78,evo:'Positiva',gad:[16,7],phq:[10,4],sch:[[4,'09:00'],[2,'14:00']],pat:[['Preocupación excesiva',10],['Perfeccionismo',5]]},
+ {id:'PAC-0011',n:'Mateo Quispe',age:38,tel:'+51 986 441 207',est:'Activo',mot:'Depresión leve.',ses:11,ini:'2026-03-02',ult:'2026-10-30',rk:'Moderado',own:'laura',a0:62,a1:49,e0:68,e1:52,comp:79,ab:26,av:58,evo:'Moderada',gad:[9,6],phq:[15,9],sch:[[4,'10:30'],[5,'09:00']],pat:[['Anhedonia',7],['Aislamiento',5]]},
+ {id:'PAC-0012',n:'Daniela Flores',age:24,tel:'+51 973 560 012',est:'Activa',mot:'Autoestima y vínculos.',ses:7,ini:'2026-07-06',ult:'2026-10-28',rk:'Bajo',own:'laura',a0:72,a1:54,e0:69,e1:52,comp:87,ab:13,av:55,evo:'Positiva',gad:[11,7],phq:[8,5],sch:[[4,'14:00'],[3,'16:00']],pat:[['Autocrítica',6],['Comparación social',4]]},
+ {id:'PAC-0013',n:'Pablo Huamán',age:52,tel:'+51 958 227 396',est:'Activo',mot:'Estrés laboral.',ses:4,ini:'2026-09-29',ult:'2026-10-27',rk:'Bajo',own:'rojas',a0:66,a1:58,e0:72,e1:62,comp:74,ab:28,av:25,evo:'Inicial',gad:[9,8],phq:[7,6],sch:[[4,'12:00'],[2,'17:00']],pat:[['Estrés laboral',3]]}
+];
+var TOP_ANA=['Estrés laboral','Conflictos con supervisor','Perfeccionismo','Pensamientos automáticos','Respiración diafragmática','Límites laborales','Validación externa','Rumiación nocturna','Delegar y priorizar','Reestructuración cognitiva','Prevención de recaídas','Presión por objetivos laborales'];
+var ANA_DATES=['2026-01-12','2026-01-20','2026-01-27','2026-02-17','2026-03-10','2026-04-07','2026-05-05','2026-06-16','2026-08-04','2026-09-15','2026-10-20','2026-11-03'];
+var TOP_GEN=['Evaluación inicial','Historia personal','Detonantes identificados','Psicoeducación','Técnicas de regulación','Registro de pensamientos','Plan de acción','Revisión de avances','Reestructuración cognitiva','Habilidades de afrontamiento','Prevención de recaídas','Consolidación de logros','Seguimiento','Cierre parcial','Mantenimiento','Revisión de objetivos'];
+
+/* ---------- permisos ---------- */
+var R=[
+ {id:'dashboard',l:'Dashboard',i:'grid',ro:'psi sup adm'},
+ {id:'pacientes',l:'Pacientes',i:'users',ro:'psi sup adm'},
+ {id:'agenda',l:'Agenda',i:'cal',ro:'psi sup adm'},
+ {id:'sesiones',l:'Sesiones',i:'mic',ro:'psi sup adm'},
+ {id:'ia',l:'IA Clínica',i:'spark',ro:'psi sup adm'},
+ {id:'biblioteca',l:'Biblioteca',i:'book',ro:'psi sup adm'},
+ {id:'radar',l:'Radar Clínico',i:'radar',ro:'psi sup adm'},
+ {id:'seguimiento',l:'Seguimiento',i:'chat',ro:'psi sup adm'},
+ {id:'facturacion',l:'Facturación',i:'card',ro:'psi adm'},
+ {id:'equipo',l:'Equipo Clínico',i:'person',ro:'sup adm'},
+ {id:'config',l:'Configuración',i:'gear',ro:'psi sup adm'}];
+function routeDef(id){for(var i=0;i<R.length;i++)if(R[i].id===id)return R[i];return null}
+function allowed(id){if(id==='ficha'||id==='portal')return true;var d=routeDef(id);return !!(d&&S.user&&d.ro.split(' ').indexOf(S.user.r)>-1)}
+
+/* ---------- estado ---------- */
+var S={user:null,pick:'carlos',route:'dashboard',pid:'PAC-0001',tab:'res',fil:'all',q:'',cal:{y:2026,m:10,d:5},fl:{st:'idle',n:0},wa:'ask',bill:{scope:'me',tab:'res'},cyc:'m',rad:'PAC-0001',chat:[],auto:{a:true,b:true,c:true,d:false,e:true},tour:{on:false,i:0},last:'',con:{},cf:{},cedit:null,scl:'gad',ans:{},hist:{},extra:[],slot:null,booked:null,sum:null,sumPid:null};
+var flowTimer=null,toastTimer=null;
+
+function vis(){return PT.filter(function(p){return S.user.sc==='all'||p.own===S.user.id})}
+function byId(id){for(var i=0;i<PT.length;i++)if(PT[i].id===id)return PT[i];return null}
+function canSee(p){return !!p&&(S.user.sc==='all'||p.own===S.user.id)}
+function curPat(){var p=byId(S.pid);return canSee(p)?p:vis()[0]}
+var initials=function(n){return n.split(' ').filter(Boolean).slice(0,2).map(function(w){return w[0]}).join('')};
+
+/* ---------- agenda ---------- */
+function keyOf(y,m,d){return y+'-'+pad(m+1)+'-'+pad(d)}
+function stat(p,dt,t){
+  var hm=t.split(':').map(Number),s=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),hm[0],hm[1]),e=new Date(s.getTime()+50*60000),same=dt.getDate()===5&&dt.getMonth()===10;
+  if(e<NOW){return (!same&&(dt.getDate()*7+hm[0]*3)%25===0)?'Cancelada':'Completada'}
+  if(s<=NOW)return 'En curso';
+  return (dt.getDate()+hm[0]+p.n.length)%3===0?'Pendiente':'Confirmada';
+}
+function dayAppts(y,m,d,list){
+  var dt=new Date(y,m,d),dow=dt.getDay(),out=[],k=keyOf(y,m,d);
+  list.forEach(function(p){
+    (p.sch||[]).forEach(function(s){if(s[0]===dow)out.push({p:p,dt:dt,t:s[1],st:stat(p,dt,s[1])})});
+    (p.fix||[]).forEach(function(f){if(f[0]===k)out.push({p:p,dt:dt,t:f[1],st:stat(p,dt,f[1])})});
+  });
+  S.extra.forEach(function(e){if(e.key===k&&list.indexOf(e.p)>-1)out.push({p:e.p,dt:dt,t:e.t,st:'Pendiente'})});
+  return out.sort(function(a,b){return a.t<b.t?-1:a.t>b.t?1:0});
+}
+function dayLabel(dt){
+  var diff=Math.round((new Date(dt.getFullYear(),dt.getMonth(),dt.getDate())-new Date(2026,10,5))/864e5);
+  if(diff===0)return 'Hoy';if(diff===1)return 'Mañana';
+  return DOW[dt.getDay()]+' '+pad(dt.getDate())+'/'+pad(dt.getMonth()+1);
+}
+function nextAppt(p){
+  for(var i=0;i<45;i++){
+    var dt=new Date(2026,10,5+i),a=dayAppts(dt.getFullYear(),dt.getMonth(),dt.getDate(),[p]);
+    for(var j=0;j<a.length;j++){if(a[j].st!=='Cancelada'&&a[j].st!=='Completada')return a[j]}
+  }
+  return null;
+}
+function nextTxt(p){var a=nextAppt(p);return a?dayLabel(a.dt)+' · '+a.t:'Sin agendar'}
+function stPill(s){var c={Completada:'',Confirmada:'good',Pendiente:'warn','En curso':'info',Cancelada:'crit'}[s]||'';return '<span class="pill '+c+'">'+s+'</span>'}
+
+/* ---------- series ---------- */
+function mkSeries(a0,a1,n){var o=[];for(var i=0;i<n;i++){var v=a0+(a1-a0)*(n===1?1:i/(n-1));if(i>0&&i<n-1)v+=(i%3===1?1.6:-1.2);o.push(Math.round(v))}return o}
+function anxSeries(p){return p.id==='PAC-0001'?[86,84,82,80,77,75,72,70,67,65,63,61]:mkSeries(p.a0,p.a1,Math.min(p.ses,16))}
+function estSeries(p){return p.id==='PAC-0001'?[82,76,70,66,58]:mkSeries(p.e0,p.e1,5)}
+function dateFmt(iso){var a=iso.split('-');return pad(+a[2])+' '+MES[+a[1]-1]}
+function sessionsOf(p){
+  var out=[],n=p.ses,i,ds=p.id==='PAC-0001'?ANA_DATES:null;
+  var t0=new Date(p.ini).getTime(),t1=new Date(p.ult).getTime();
+  for(i=0;i<n;i++){
+    var iso=ds?ds[i]:new Date(t0+(t1-t0)*(n===1?1:i/(n-1))).toISOString().slice(0,10);
+    out.push({n:i+1,d:iso,tema:p.id==='PAC-0001'?TOP_ANA[i]:TOP_GEN[i%TOP_GEN.length],dur:(p.id==='PAC-0001'&&i===11)?48:50});
+  }
+  return out;
+}
+function soapOf(p){
+  if(p.id==='PAC-0001')return [
+   {n:12,d:'03 Nov',S:'Refiere preocupación constante por rendimiento laboral. Siente que nunca hace las cosas suficientemente bien.',O:'Discurso coherente. Orientada en tiempo y espacio.',A:'Persisten indicadores de ansiedad laboral. Existe mejor reconocimiento de detonantes emocionales.',P:'Practicar técnicas de respiración. Registrar pensamientos automáticos. Revisar límites laborales en próxima sesión.'},
+   {n:11,d:'20 Oct',S:'Reporta menos rumiación nocturna, aunque persiste la revisión repetida de tareas.',O:'Afecto congruente. Ritmo del habla normal.',A:'Avance en reestructuración de pensamientos perfeccionistas.',P:'Continuar registro de pensamientos. Introducir delegación de tareas.'},
+   {n:10,d:'15 Sep',S:'Menciona tensión con su supervisor por plazos de entrega.',O:'Colaboradora, buen contacto visual.',A:'Ansiedad ligada a validación externa.',P:'Ensayar conversación asertiva con el supervisor.'}];
+  return [{n:p.ses,d:dateFmt(p.ult),S:'Refiere malestar asociado a: '+p.mot,O:'Discurso coherente y orientado. Afecto congruente.',A:'Evolución '+p.evo.toLowerCase()+' del cuadro. Riesgo '+p.rk.toLowerCase()+'.',P:'Continuar plan terapéutico, reforzar técnicas trabajadas y revisar avances en la próxima sesión.'}];
+}
+function gadTxt(v){return v<=4?'mínima':v<=9?'leve':v<=14?'moderada':'severa'}
+function phqTxt(v){return v<=4?'mínima':v<=9?'leve':v<=14?'moderada':v<=19?'moderadamente severa':'severa'}
+function riskPill(r){return '<span class="pill '+(r==='Alto'?'crit':r==='Moderado'?'warn':'good')+'">'+r+'</span>'}
+function estPill(e){return '<span class="pill '+(e==='Seguimiento intensivo'?'warn':'good')+'">'+esc(e)+'</span>'}
+
+/* ---------- gráficos SVG ---------- */
+function niceMax(v){var p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;return (n<=1?1:n<=2?2:n<=5?5:10)*p}
+function bars(vals,labels,o){
+  o=o||{};var W=560,H=220,L=o.L||40,Rr=10,T=18,B=28,iw=W-L-Rr,ih=H-T-B,mx=o.max||niceMax(Math.max.apply(null,vals)*1.05),bw=iw/vals.length,f=o.fmt||function(v){return Math.round(v)};
+  var s='<svg viewBox="0 0 '+W+' '+H+'" class="chart" role="img" aria-label="'+esc(o.label||'Gráfico de barras')+'">';
+  for(var i=0;i<=4;i++){var y=T+ih-ih*i/4;s+='<line class="grid" x1="'+L+'" x2="'+(W-Rr)+'" y1="'+y+'" y2="'+y+'"/><text class="t" x="'+(L-6)+'" y="'+(y+4)+'" text-anchor="end">'+f(mx*i/4)+'</text>'}
+  vals.forEach(function(v,i){var bh=ih*v/mx,x=L+i*bw+bw*.2,y=T+ih-bh,hi=i===vals.length-1;
+    s+='<rect class="bar'+(hi?' hi':'')+'" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw*.6).toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="3"/>';
+    s+='<text class="t" x="'+(x+bw*.3).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle">'+labels[i]+'</text>';
+    if(hi)s+='<text class="tv c1" x="'+(x+bw*.3).toFixed(1)+'" y="'+(y-6).toFixed(1)+'" text-anchor="middle">'+f(v)+'</text>'});
+  return s+'</svg>';
+}
+function lines(ser,labels,o){
+  o=o||{};var W=560,H=o.h||220,L=40,Rr=18,T=18,B=30,iw=W-L-Rr,ih=H-T-B,mn=o.min==null?0:o.min,mx=o.max==null?100:o.max,n=labels.length,u=o.unit||'';
+  var X=function(i){return L+(n===1?iw/2:iw*i/(n-1))},Y=function(v){return T+ih-ih*(v-mn)/(mx-mn)};
+  var s='<svg viewBox="0 0 '+W+' '+H+'" class="chart" role="img" aria-label="'+esc(o.label||'Gráfico de líneas')+'">';
+  for(var k=0;k<=4;k++){var v=mn+(mx-mn)*k/4,y=Y(v);s+='<line class="grid" x1="'+L+'" x2="'+(W-Rr)+'" y1="'+y+'" y2="'+y+'"/><text class="t" x="'+(L-6)+'" y="'+(y+4)+'" text-anchor="end">'+Math.round(v)+u+'</text>'}
+  var step=o.every||1;
+  labels.forEach(function(l,i){if(i%step===0||i===n-1)s+='<text class="t" x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle">'+l+'</text>'});
+  ser.forEach(function(se,si){
+    var pts=se.v.map(function(v,i){return [X(i),Y(v)]}),d=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)}).join(' ');
+    if(si===0&&o.area)s+='<path class="area '+se.c+'" d="'+d+' L'+pts[pts.length-1][0].toFixed(1)+' '+(T+ih)+' L'+pts[0][0].toFixed(1)+' '+(T+ih)+'Z"/>';
+    s+='<path class="ln '+se.c+'" d="'+d+'"/>';
+    var e=pts[pts.length-1];s+='<circle class="dot '+se.c+'" cx="'+e[0].toFixed(1)+'" cy="'+e[1].toFixed(1)+'" r="4.5"/><text class="tv '+se.c+'" x="'+e[0].toFixed(1)+'" y="'+(e[1]+(se.below?20:-10)).toFixed(1)+'" text-anchor="end">'+se.v[se.v.length-1]+u+'</text>';
+  });
+  return s+'</svg>';
+}
+var DIMS=['Ansiedad','Estrés','Ánimo','Sueño','Compromiso','Adherencia'];
+function radarSvg(sets){
+  var W=380,H=340,cx=190,cy=172,r=108,n=DIMS.length;
+  var pt=function(i,v){var a=-Math.PI/2+2*Math.PI*i/n;return [cx+Math.cos(a)*r*v/100,cy+Math.sin(a)*r*v/100]};
+  var s='<svg viewBox="0 0 '+W+' '+H+'" class="chart" role="img" aria-label="Radar clínico con seis dimensiones">';
+  [25,50,75,100].forEach(function(v){s+='<polygon class="ring" points="'+DIMS.map(function(_,i){return pt(i,v).map(function(x){return x.toFixed(1)}).join(',')}).join(' ')+'"/>'});
+  DIMS.forEach(function(l,i){var e=pt(i,100),a=pt(i,118);s+='<line class="grid" x1="'+cx+'" y1="'+cy+'" x2="'+e[0].toFixed(1)+'" y2="'+e[1].toFixed(1)+'"/><text class="t" x="'+a[0].toFixed(1)+'" y="'+(a[1]+4).toFixed(1)+'" text-anchor="'+(a[0]<cx-4?'end':a[0]>cx+4?'start':'middle')+'">'+l+'</text>'});
+  sets.forEach(function(se){s+='<polygon class="rp '+se.c+'" points="'+se.v.map(function(v,i){return pt(i,v).map(function(x){return x.toFixed(1)}).join(',')}).join(' ')+'"/>'});
+  return s+'</svg>';
+}
+function radarVals(p){
+  var now=[p.a1,p.e1,clamp(100-p.a1*.7),clamp(100-p.a1*.65),p.comp,clamp(p.comp-4)];
+  var ini=[p.a0,p.e0,clamp(100-p.a0*.7),clamp(100-p.a0*.65),clamp(p.comp-22),clamp(p.comp-30)];
+  var mid=now.map(function(v,i){return Math.round((v+ini[i])/2)});
+  return {ini:ini,mid:mid,now:now};
+}
+function meter(v,cls){return '<div class="meter '+(cls||'')+'" role="img" aria-label="'+v+'%"><i style="width:'+v+'%"></i></div>'}
+function kpi(l,v,s){return '<div class="kpi"><div class="l">'+l+'</div><div class="v">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':'')+'</div>'}
+function avatar(n,cls){return '<span class="av '+(cls||'')+'" aria-hidden="true">'+esc(initials(n))+'</span>'}
+
+/* ---------- vistas ---------- */
+var V={};
+V.dashboard=function(){
+  var u=S.user,k=KPI[u.k],v=vis(),today=dayAppts(2026,10,5,v),done=today.filter(function(a){return a.st==='Completada'}).length;
+  var tiles=kpi('Pacientes activos',k.pac,'+6 este mes')+kpi('Sesiones esta semana',k.sem,'+4 vs. semana anterior')+kpi('Sesiones hoy',today.length,done+' completadas')+kpi('Tasa de asistencia',k.asi+'%','Meta 90%')+
+    kpi('Cancelaciones',k.can+'%','−1 pt vs. septiembre')+kpi('Notas IA generadas',nf(k.ia),'SOAP y resúmenes')+kpi('Horas ahorradas',k.hr,'En redacción clínica')+
+    (u.r==='sup'?kpi('Retención de pacientes','89%','Últimos 6 meses'):kpi('Ingresos del mes','US$ '+nf(k.ing),'+7% vs. septiembre'));
+  var up=[];for(var d=0;d<2;d++){dayAppts(2026,10,5+d,v).forEach(function(a){if(a.st==='En curso'||a.st==='Confirmada'||a.st==='Pendiente')up.push(a)})}
+  up=up.slice(0,7);
+  var al=v.filter(function(p){return p.rk==='Alto'}).map(function(p){return '<div class="li"><div class="pn">'+avatar(p.n)+'<div><b>'+esc(p.n)+'</b><span class="small muted">Riesgo alto · compromiso '+p.comp+'% · abandono '+p.ab+'%</span></div></div><button class="btn sm" data-a="pat" data-id="'+p.id+'">Revisar</button></div>'}).join('');
+  v.filter(function(p){return p.rk!=='Alto'&&p.ab>=30}).forEach(function(p){al+='<div class="li"><div class="pn">'+avatar(p.n)+'<div><b>'+esc(p.n)+'</b><span class="small muted">Riesgo de abandono '+p.ab+'%</span></div></div><span class="pill warn">Atención</span></div>'});
+  if(!al)al='<div class="empty">Sin alertas clínicas.</div>';
+  var wk=['14/9','21/9','28/9','5/10','12/10','19/10','26/10','2/11'];
+  return '<div class="hd2"><div><h1>Buenos días, '+esc(u.n.split(' ').slice(0,2).join(' '))+'</h1><p>Jueves 5 de noviembre de 2026 · Centro Psicológico Renacer</p></div></div>'+
+   '<div class="gk k8">'+tiles+'</div>'+
+   '<div class="g2"><section class="card"><div class="ch"><h2>Próximas citas</h2><button class="btn sm" data-a="go" data-r="agenda">Ver agenda</button></div><div class="list">'+
+   (up.length?up.map(function(a){return '<div class="li"><div class="pn"><span class="mono" style="min-width:92px">'+dayLabel(a.dt)+' '+a.t+'</span><div><b>'+esc(a.p.n)+'</b>'+(u.sc==='all'?'<span class="small muted">'+OWN[a.p.own]+'</span>':'')+'</div></div>'+stPill(a.st)+'</div>'}).join(''):'<div class="empty">No hay citas próximas.</div>')+'</div></section>'+
+   '<section class="card"><h2>Pacientes que requieren atención</h2><div class="list">'+al+'</div></section></div>'+
+   '<div class="g2"><section class="card"><h2>Sesiones por semana</h2>'+bars(k.wk,wk,{label:'Sesiones por semana, últimas 8 semanas'})+'</section>'+
+   '<section class="card"><h2>Tasa de asistencia</h2>'+lines([{v:k.as,c:'c1'}],wk,{min:80,max:100,unit:'%',area:true,label:'Tasa de asistencia, últimas 8 semanas'})+'</section></div>';
+};
+V.pacientes=function(){
+  var v=vis(),tot={carlos:84,ana:68}[S.user.id]||243;
+  return '<div class="hd2"><div><h1>Pacientes</h1><p id="pcount"></p></div></div>'+
+   '<section class="card"><div style="display:grid;gap:12px"><div><label class="sr" for="q">Buscar paciente</label><input class="input" id="q" type="search" placeholder="Buscar por nombre, ID o motivo" maxlength="60" autocomplete="off" value="'+esc(S.q)+'"></div>'+
+   '<div class="chips" role="group" aria-label="Filtros">'+[['all','Todos'],['act','Activos'],['int','Seguimiento intensivo'],['risk','Riesgo moderado o alto']].map(function(f){return '<button class="chip" data-a="fil" data-f="'+f[0]+'" aria-pressed="'+(S.fil===f[0])+'">'+f[1]+'</button>'}).join('')+'</div></div></section>'+
+   '<section class="card" style="padding:6px 8px"><div class="tw"><table><thead><tr><th>Paciente</th><th>Motivo</th><th>Sesiones</th><th>Próxima cita</th><th>Estado</th><th>Riesgo</th>'+(S.user.sc==='all'?'<th>Psicólogo/a</th>':'')+'</tr></thead><tbody id="ptb"></tbody></table></div></section>'+
+   '<p class="note">Vista de ejemplo con '+v.length+' pacientes de '+tot+'.</p>';
+};
+function patRows(){
+  var q=S.q.trim().toLowerCase(),rows=vis().filter(function(p){
+    if(S.fil==='act'&&p.est==='Seguimiento intensivo')return false;
+    if(S.fil==='int'&&p.est!=='Seguimiento intensivo')return false;
+    if(S.fil==='risk'&&p.rk==='Bajo')return false;
+    return !q||(p.n+' '+p.id+' '+p.mot).toLowerCase().indexOf(q)>-1});
+  var c=$('#pcount');if(c)c.textContent=rows.length+' de '+vis().length+' pacientes visibles para tu rol';
+  $('#ptb').innerHTML=rows.length?rows.map(function(p){
+    return '<tr class="clk" tabindex="0" data-a="pat" data-id="'+p.id+'" aria-label="Abrir expediente de '+esc(p.n)+'"><td><div class="pn">'+avatar(p.n)+'<div><b>'+esc(p.n)+'</b><span class="small muted mono">'+p.id+' · '+p.age+' años</span></div></div></td><td>'+esc(p.mot)+'</td><td class="mono">'+p.ses+'</td><td>'+nextTxt(p)+'</td><td>'+estPill(p.est)+'</td><td>'+riskPill(p.rk)+'</td>'+(S.user.sc==='all'?'<td>'+OWN[p.own]+'</td>':'')+'</tr>'}).join(''):'<tr><td colspan="7"><div class="empty">Ningún paciente coincide con la búsqueda.</div></td></tr>';
+}
+V.ficha=function(){
+  var p=curPat();if(!p)return '<div class="empty">No hay pacientes disponibles.</div>';
+  var tabs=[['res','Resumen'],['ses','Sesiones'],['soap','SOAP'],['esc','Escalas'],['con','Consentimiento'],['doc','Documentos'],['ia','IA']];
+  return '<div><button class="btn sm" data-a="go" data-r="pacientes">← Pacientes</button></div>'+
+   '<section class="card"><div class="pn" style="gap:16px;flex-wrap:wrap">'+avatar(p.n,'lg')+'<div style="flex:1;min-width:200px"><h1>'+esc(p.n)+'</h1><p class="muted mono small">'+p.id+' · '+p.age+' años · '+esc(p.tel)+'</p><div class="chips" style="margin-top:8px">'+estPill(p.est)+riskPill(p.rk)+conPill(p)+'<span class="pill info">Próxima: '+nextTxt(p)+'</span></div></div>'+
+   '<div class="chips"><button class="btn pri sm" data-a="go" data-r="sesiones">Nueva sesión</button><button class="btn sm" data-a="go" data-r="seguimiento">WhatsApp</button><button class="btn sm" data-a="go" data-r="portal">Vista del paciente</button><button class="btn sm" data-a="sum">Resumen para copiar</button></div></div></section>'+(S.sum&&S.sumPid===p.id?sumPanel():'')+
+   '<div class="tabs" role="tablist" aria-label="Expediente">'+tabs.map(function(t){return '<button role="tab" data-a="tab" data-t="'+t[0]+'" aria-selected="'+(S.tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>'+
+   '<div role="tabpanel">'+T[S.tab](p)+'</div>';
+};
+var T={};
+T.res=function(p){
+  var an=anxSeries(p),lbl=an.map(function(_,i){return 'S'+(i+1)});
+  var resumen=p.evo==='Positiva'?'Evolución positiva. Menor intensidad de síntomas y buena adherencia.':p.evo==='Lenta'?'Evolución lenta. Se mantiene seguimiento intensivo y revisión semanal del plan.':'Evolución '+p.evo.toLowerCase()+'. Se mantiene el plan terapéutico actual.';
+  return '<div class="g2"><section class="card"><h2>Datos del paciente</h2><dl class="kv" style="margin:0"><div><dt>Motivo</dt><dd>'+esc(p.mot)+'</dd></div><div><dt>Inicio</dt><dd>'+dateFmt(p.ini)+' 2026</dd></div><div><dt>Última sesión</dt><dd>'+dateFmt(p.ult)+' 2026</dd></div><div><dt>Próxima sesión</dt><dd>'+nextTxt(p)+'</dd></div><div><dt>Psicólogo/a</dt><dd>'+OWN[p.own]+'</dd></div><div><dt>Sesiones</dt><dd class="mono">'+p.ses+'</dd></div></dl></section>'+
+   '<section class="card"><h2>Resumen clínico</h2><p>'+resumen+'</p><div style="display:grid;gap:12px;margin-top:14px"><div><div class="ch small"><span>Nivel de avance</span><b class="mono">'+p.av+'%</b></div>'+meter(p.av)+'</div><div><div class="ch small"><span>Compromiso terapéutico</span><b class="mono">'+p.comp+'%</b></div>'+meter(p.comp,'good')+'</div></div></section></div>'+
+   '<section class="card"><h2>Ansiedad por sesión</h2>'+lines([{v:an,c:'c1'}],lbl,{unit:'%',area:true,every:an.length>8?2:1,min:20,max:100,label:'Ansiedad por sesión de '+p.n})+'</section>';
+};
+T.ses=function(p){
+  var ss=sessionsOf(p),m={},order=[];ss.forEach(function(s){var k=MES[+s.d.split('-')[1]-1];if(!(k in m)){m[k]=0;order.push(k)}m[k]++});
+  return '<section class="card"><h2>Sesiones por mes</h2>'+bars(order.map(function(k){return m[k]}),order,{max:4,label:'Sesiones por mes'})+'</section>'+
+   '<section class="card"><h2>Historial de sesiones</h2><div class="list">'+ss.slice().reverse().map(function(s){return '<div class="li"><div><b>Sesión '+pad(s.n)+'</b> · '+esc(s.tema)+'<div class="small muted">'+dateFmt(s.d)+' 2026 · '+s.dur+' minutos</div></div><span class="pill good">SOAP listo</span></div>'}).join('')+'</div></section>';
+};
+T.soap=function(p){
+  return soapOf(p).map(function(s,i){return '<details'+(i===0?' open':'')+'><summary>Sesión '+pad(s.n)+' · '+s.d+'</summary><div class="soap">'+['S','O','A','P'].map(function(k){return '<div><b>'+k+'</b><p>'+esc(s[k])+'</p></div>'}).join('')+'<p class="ai-note">Generado con IA y revisado por '+OWN[p.own]+'.</p></div></details>'}).join('');
+};
+T.doc=function(p){
+  return '<div class="g2"><section class="card"><h2>Consentimiento informado</h2>'+(conOf(p).st==='vigente'?'<div class="li"><div><b>Consentimiento_'+p.id+'_'+conOf(p).v+'.pdf</b><div class="small muted">Firmado el '+esc(conOf(p).d)+' · 184 KB</div></div><span class="pill good">Firmado</span></div>':'<div class="li"><div><b>Consentimiento informado</b><div class="small muted">'+(conOf(p).st==='retirado'?'Retirado por el paciente':'Aún no se ha registrado')+'</div></div>'+conPill(p)+'</div>')+'</section>'+
+   '<section class="card"><h2>Evaluaciones</h2><div class="li"><div><b>GAD-7 (ansiedad)</b><div class="small muted">Inicio '+p.gad[0]+' ('+gadTxt(p.gad[0])+') → actual '+p.gad[1]+' ('+gadTxt(p.gad[1])+')</div></div><span class="pill mono">'+p.gad[1]+'/21</span></div><div class="li"><div><b>PHQ-9 (ánimo)</b><div class="small muted">Inicio '+p.phq[0]+' ('+phqTxt(p.phq[0])+') → actual '+p.phq[1]+' ('+phqTxt(p.phq[1])+')</div></div><span class="pill mono">'+p.phq[1]+'/27</span></div></section></div>'+
+   '<section class="card"><h2>Adjuntos</h2><div class="list"><div class="li"><span>registro_pensamientos.pdf</span><span class="muted small">92 KB</span></div><div class="li"><span>sesion_'+pad(p.ses)+'_audio.mp3</span><span class="muted small">44 MB · cifrado</span></div><div class="li"><span>plan_terapeutico.pdf</span><span class="muted small">210 KB</span></div></div></section>';
+};
+T.ia=function(p){
+  var rv=radarVals(p),an=anxSeries(p);
+  return '<div class="g2"><section class="card"><h2>Patrones detectados</h2><div class="list">'+p.pat.map(function(x){return '<div class="li"><span>'+esc(x[0])+'</span><span class="pill mono">'+x[1]+' sesiones</span></div>'}).join('')+'</div></section>'+
+   '<section class="card"><h2>Cambios emocionales</h2><div class="list">'+[['Ansiedad',p.a0,p.a1,true],['Estrés',p.e0,p.e1,true],['Ánimo',rv.ini[2],rv.now[2],false]].map(function(c){var good=c[3]?c[2]<c[1]:c[2]>c[1];return '<div class="li"><span>'+c[0]+'</span><span class="mono">'+c[1]+'% → '+c[2]+'% <span class="pill '+(good?'good':'warn')+'">'+(c[2]<c[1]?'↓':'↑')+'</span></span></div>'}).join('')+'</div></section></div>'+
+   '<section class="card"><h2>Riesgo de abandono</h2><div class="ch" style="margin-bottom:8px"><span>'+(p.ab<20?'Bajo':p.ab<35?'Moderado':'Alto')+'</span><b class="mono">'+p.ab+'%</b></div>'+meter(p.ab,p.ab<20?'good':p.ab<35?'warn':'crit')+'<p class="ai-note" style="margin-top:12px">Estimación de apoyo. La decisión clínica corresponde al profesional.</p></section>';
+};
+
+/* agenda */
+V.agenda=function(){
+  var c=S.cal,first=new Date(c.y,c.m,1),off=(first.getDay()+6)%7,days=new Date(c.y,c.m+1,0).getDate(),v=vis(),cells='';
+  ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(function(d){cells+='<div class="dh">'+d+'</div>'});
+  for(var i=0;i<off;i++)cells+='<button class="off" tabindex="-1" aria-hidden="true" disabled></button>';
+  for(var d=1;d<=days;d++){
+    var a=dayAppts(c.y,c.m,d,v),wk=(new Date(c.y,c.m,d).getDay()+6)%7>4,isT=c.y===2026&&c.m===10&&d===5;
+    cells+='<button class="'+(wk?'we ':'')+(isT?'today':'')+'" data-a="day" data-d="'+d+'" aria-pressed="'+(c.d===d)+'" aria-label="'+d+' de '+MESL[c.m]+', '+a.length+' citas"><b style="font-size:13px">'+d+'</b>'+(a.length?'<em>'+a.length+'</em>':'<span></span>')+'</button>';
+  }
+  var sel=dayAppts(c.y,c.m,c.d,v);
+  return '<div class="hd2"><div><h1>Agenda</h1><p>'+(S.user.sc==='all'?'Todas las citas de la clínica':'Tus citas')+'</p></div></div>'+
+   '<div class="g2" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))"><section class="card"><div class="ch" style="margin-bottom:12px"><h2>'+MESL[c.m]+' '+c.y+'</h2><div class="calnav"><button class="btn sm" data-a="cal" data-s="-1" aria-label="Mes anterior"'+(c.m<=9?' disabled':'')+'>←</button><button class="btn sm" data-a="cal" data-s="1" aria-label="Mes siguiente"'+(c.m>=11?' disabled':'')+'>→</button></div></div><div class="cal">'+cells+'</div></section>'+
+   '<section class="card"><h2>'+DOW[new Date(c.y,c.m,c.d).getDay()]+' '+c.d+' de '+MESL[c.m]+'</h2><div class="list">'+(sel.length?sel.map(function(a){return '<div class="li"><div class="pn"><span class="mono" style="min-width:46px">'+a.t+'</span><div><b>'+esc(a.p.n)+'</b>'+(S.user.sc==='all'?'<span class="small muted">'+OWN[a.p.own]+'</span>':'<span class="small muted">'+esc(a.p.mot)+'</span>')+'</div></div><div class="chips">'+stPill(a.st)+'<button class="btn sm" data-a="pat" data-id="'+a.p.id+'">Expediente</button></div></div>'}).join(''):'<div class="empty">No hay citas este día.</div>')+'</div></section></div>';
+};
+
+/* flujo IA */
+var FS=[['Audio recibido','ana_sesion_12.mp3 · 48 min'],['Transcripción','2 voces identificadas'],['Resumen clínico','3 hallazgos'],['Nota SOAP','Borrador para revisar'],['Supervisor IA','Patrones y alertas'],['Seguimiento','Mensaje al paciente'],['Próxima cita','Agenda y confirmación']];
+var TR=[['00:12','t','Buenos días, Ana. ¿Cómo has estado desde la última sesión?'],['00:21','p','He sentido mucha presión estos días por los objetivos del trabajo.'],['00:38','p','Siento que nunca hago las cosas suficientemente bien.'],['00:52','t','¿Qué ocurre cuando sientes que no alcanzas las expectativas?'],['01:10','p','Reviso todo varias veces y me cuesta soltar el trabajo por las noches. Ayer practiqué la respiración y ayudó un poco.'],['01:41','t','Es valioso que lo hayas probado. ¿Cuándo notaste más el efecto?'],['02:03','p','Antes de la reunión con mi supervisor. Llegué más tranquila.']];
+function waveHtml(){var h=[14,26,38,22,32,18,40,28,16,34,24,38,20,30,12,36,26,18,32,22],s='';h.forEach(function(x){s+='<i style="height:'+x+'px"></i>'});return '<div class="wave" aria-hidden="true">'+s+'</div>'}
+function flowCard(i){
+  var p=byId('PAC-0001');
+  if(i===0)return '<section class="card"><div class="ch"><h2>Audio recibido</h2><span class="pill good">Cifrado</span></div><div class="pn" style="gap:16px;flex-wrap:wrap"><span class="file">ana_sesion_12.mp3</span>'+waveHtml()+'<span class="muted small mono">48:12 · 44 MB</span></div></section>';
+  if(i===1)return '<section class="card"><div class="ch"><h2>Transcripción</h2><span class="pill">2 voces · 96% de confianza</span></div><div class="tl">'+TR.map(function(l){return '<div class="ln1"><span class="mono muted small">'+l[0]+'</span><span class="who '+l[1]+'">'+(l[1]==='p'?'Paciente':'Terapeuta')+'</span><span>'+esc(l[2])+'</span></div>'}).join('')+'</div><p class="ai-note" style="margin-top:10px">Se muestran los primeros minutos de 48.</p></section>';
+  if(i===2)return '<section class="card"><h2>Resumen clínico</h2><div class="list"><div class="li">La paciente reporta incremento de ansiedad relacionado con demandas laborales excesivas.</div><div class="li">Identifica pensamientos perfeccionistas recurrentes.</div><div class="li">Mantiene buena disposición al proceso terapéutico.</div></div></section>';
+  if(i===3){var s=soapOf(p)[0],nm={S:'Subjetivo',O:'Objetivo',A:'Evaluación',P:'Plan'};return '<section class="card"><div class="ch"><h2>Nota SOAP</h2><span class="pill warn">Pendiente de tu revisión</span></div><div class="sg">'+['S','O','A','P'].map(function(k){return '<div><b class="k">'+k+'</b><h3>'+nm[k]+'</h3><p style="margin-top:4px">'+esc(s[k])+'</p></div>'}).join('')+'</div></section>'}
+  if(i===4)return '<section class="card"><h2>Supervisor IA</h2><div class="g3"><div><div class="muted small">Patrón detectado</div><b>Perfeccionismo</b><div class="small muted">Aparece en 9 sesiones. Ansiedad asociada a validación externa.</div></div><div><div class="muted small">Nivel de avance</div><b class="mono" style="font-size:22px">72%</b>'+meter(72)+'</div><div class="chips" style="align-content:start"><span class="pill warn">Fatiga emocional moderada</span><span class="pill warn">Riesgo de recaída bajo</span><span class="pill good">Adherencia alta</span></div></div></section>';
+  if(i===5)return '<section class="card"><div class="ch"><h2>Seguimiento automático</h2><span class="pill info">Canal WhatsApp</span></div><div class="bub" style="max-width:420px">Hola Ana.<br>Recuerda implementar las técnicas trabajadas en sesión.<br><span class="muted">Equipo Gestor Psicológico.</span></div></section>';
+  return '<section class="card"><h2>Próxima cita</h2><div class="li"><div><b>Viernes 06/11 · 09:00</b><div class="small muted">Ana Ramírez · 50 minutos</div></div><span class="pill good">Agendada</span></div><div class="li"><span>Recordatorio por WhatsApp enviado</span><button class="btn sm" data-a="go" data-r="seguimiento">Ver conversación</button></div></section>';
+}
+function drawFlow(){
+  var el=$('#flowBody');if(!el)return;var f=S.fl;
+  var st='<div class="steps" aria-label="Progreso">'+FS.map(function(s,i){var c=i<f.n?'done':(f.st==='run'&&i===f.n)?'act':'';return '<div class="stp '+c+'"><span class="n">'+(i<f.n?'✓':(c==='act'?'<span class="spin"></span>':i+1))+'</span><div><b>'+s[0]+'</b><span>'+s[1]+'</span></div></div>'}).join('')+'</div>';
+  var out='';
+  if(f.st==='idle'){var cp=curPat();out='<div class="drop"><div class="file">'+noAcc(cp.n.split(' ')[0])+'_sesion_'+cp.ses+'.mp3</div>'+waveHtml()+'<div class="muted small">Sesión del '+dateFmt(cp.ult)+' · '+esc(cp.n)+' · 48 min</div><button class="btn pri" data-a="flowgo">Procesar con IA</button><p class="note">En esta demo el audio es de ejemplo. No se sube ningún archivo.</p></div>'}
+  else{for(var i=0;i<f.n;i++)out+=flowCard(i);if(f.st==='run')out+='<div class="card"><div class="pn"><span class="spin"></span><span class="muted">'+FS[f.n][0]+'…</span></div></div>';
+    if(f.st==='done')out+='<section class="card"><div class="ch"><div><h3>Listo en 2 min 14 s</h3><p class="muted small">Ahorro estimado: 38 minutos de redacción. Revisa la nota antes de firmarla.</p></div><div class="chips"><button class="btn pri" data-a="flowsave">Guardar en expediente</button><button class="btn" data-a="go" data-r="radar">Ver radar clínico</button><button class="btn" data-a="flowreset">Reiniciar demo</button></div></div></section>'}
+  el.innerHTML='<div class="flow">'+st+'<div class="out">'+out+'</div></div>';
+}
+V.sesiones=function(){
+  var p=curPat(),g=conGate(p),h='<div class="hd2"><div><h1>Sesiones</h1><p>Del audio a la nota SOAP y al seguimiento del paciente.</p></div></div>';
+  if(g==='ok')return h+'<div id="flowBody"></div>';
+  return h+'<section class="card" style="max-width:640px"><div class="pn" style="gap:12px">'+avatar(p.n)+'<div><b>'+esc(p.n)+'</b><div class="small muted">'+p.id+'</div></div></div><p class="pill warn" style="margin-top:14px" role="status">'+(g==='care'?'Falta el consentimiento informado de este paciente. No se puede crear una sesión.':'Este paciente no autorizó la grabación de audio o el uso de IA. No se puede procesar la sesión con IA.')+'</p><div class="chips" style="margin-top:14px"><button class="btn pri" data-a="concta">Ir a Consentimiento</button></div></section>'};
+function flowGo(){
+  if(flowTimer||conGate(curPat())!=='ok')return;S.fl={st:'run',n:0};drawFlow();
+  var fast=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  flowTimer=setInterval(function(){S.fl.n++;if(S.fl.n>=FS.length){S.fl.st='done';clearInterval(flowTimer);flowTimer=null}if(S.route==='sesiones')drawFlow();else if(S.fl.st==='done'){}},fast?120:1050);
+}
+function flowStop(){if(flowTimer){clearInterval(flowTimer);flowTimer=null}}
+
+/* IA clínica */
+V.ia=function(){
+  var v=vis(),temas=[['Ansiedad laboral',31],['Perfeccionismo',24],['Insomnio y rumiación',19],['Duelo',12],['Pareja',11]];
+  var q=['¿Qué pacientes tienen riesgo alto?','Resume la evolución de '+curPat().n,'¿Quién puede abandonar el tratamiento?'];
+  return '<div class="hd2"><div><h1>IA Clínica</h1><p>Patrones de la cartera y consultas sobre tus pacientes.</p></div></div>'+
+   '<div class="gk">'+kpi('Notas generadas',nf(KPI[S.user.k].ia),'Este año')+kpi('Tiempo por nota','4 min','Antes: ~20 min')+kpi('Confianza de transcripción','96%','Audio claro')+'</div>'+
+   '<div class="g2"><section class="card"><h2>Temas recurrentes en la cartera</h2>'+temas.map(function(t){return '<div class="hb"><span>'+t[0]+'</span>'+meter(Math.round(t[1]/31*100))+'<b class="mono">'+t[1]+'</b></div>'}).join('')+'</section>'+
+   '<section class="card"><h2>Pregunta a la IA</h2><div class="chips" style="margin-bottom:12px">'+q.map(function(x,i){return '<button class="chip" data-a="ask" data-q="'+i+'">'+esc(x)+'</button>'}).join('')+'</div><div id="chat" aria-live="polite" class="list">'+chatHtml()+'</div></section></div>';
+};
+function chatHtml(){return S.chat.length?S.chat.map(function(m){return '<div class="li" style="display:block"><div class="small muted">'+esc(m.q)+'</div><div style="margin-top:4px">'+m.a+'</div></div>'}).join(''):'<div class="empty">Elige una pregunta para ver la respuesta.</div>'}
+function askAI(i){
+  var v=vis(),p=curPat(),q,a;
+  if(i===0){q='¿Qué pacientes tienen riesgo alto?';var l=v.filter(function(x){return x.rk==='Alto'});a=l.length?l.map(function(x){return '<b>'+esc(x.n)+'</b> ('+x.id+'): compromiso '+x.comp+'%, abandono '+x.ab+'%, '+x.ses+' sesiones.'}).join('<br>'):'Ningún paciente de tu cartera tiene riesgo alto.'}
+  else if(i===1){q='Resume la evolución de '+p.n;a='<b>'+esc(p.n)+'</b>: ansiedad '+p.a0+'% → '+p.a1+'% en '+p.ses+' sesiones. Compromiso '+p.comp+'%. Temas principales: '+p.pat.slice(0,2).map(function(x){return x[0].toLowerCase()}).join(' y ')+'.'}
+  else{q='¿Quién puede abandonar el tratamiento?';var l2=v.filter(function(x){return x.ab>=25}).sort(function(a,b){return b.ab-a.ab});a=l2.length?l2.map(function(x){return '<b>'+esc(x.n)+'</b>: riesgo de abandono '+x.ab+'%'}).join('<br>'):'Ningún paciente supera el 25% de riesgo de abandono.'}
+  S.chat=[{q:q,a:a}].concat(S.chat).slice(0,3);var c=$('#chat');if(c)c.innerHTML=chatHtml();
+}
+
+
+/* biblioteca */
+var CHAP=[['A','Psicología Clínica y de la Salud','psicología clínica salud'],['B','Psicología Jurídica','psicología jurídica forense'],['C','Psicología Organizacional','psicología organizacional'],['D','Psicología Educacional','psicología educativa'],['E','Psicología Policial–Militar','psicología policial militar'],['F','Psicología del Deporte','psicología del deporte'],['G','Psicología Social–Comunitaria','psicología comunitaria'],['H','Psicología del Adulto Mayor','psicología adulto mayor'],['I','Psicología de las Emergencias y Desastres','psicología emergencias desastres'],['J','Psicología de la Familia','psicología de la familia'],['K','Psicología de las Adicciones','psicología adicciones'],['L','Psicología Ambiental','psicología ambiental'],['M','Psicología Política','psicología política'],['M','Psicología Penitenciaria','psicología penitenciaria']];
+var OFI=[['Marco normativo del Colegio de Psicólogos del Perú','https://cpsp.pe/index.php?option=com_sppagebuilder&view=page&id=7&Itemid=153'],['Resoluciones del Decanato (generales y de segunda especialidad)','https://cpsp.pe/index.php?option=com_sppagebuilder&view=page&id=35&Itemid=154'],['Estatuto nacional del CPsP (PDF)','https://www.cpsp.pe/images/documentos/marco_legal/CPsP_CDN_estatuto_nacional.pdf'],['Revista del CPsP «La Nacional»','https://cpsp.pe/index.php?option=com_sppagebuilder&view=page&id=38&Itemid=133'],['Segunda especialidad: proceso de inscripción del título','https://cpsp.pe/?Itemid=170&id=27&option=com_sppagebuilder&view=page'],['Ley del trabajo del psicólogo (PDF, CPsP Lima y Callao)','https://cpsplimaycallao.org.pe/wp-content/uploads/2023/10/Ley-del-Psicologo-PS-Jenny-Junco.pdf']];
+function lk(h,t){return '<a class="lk" href="'+esc(h)+'" target="_blank" rel="noopener noreferrer"><span>'+esc(t)+'</span><span class="sr"> (se abre en una pestaña nueva)</span></a>'}
+function bibLinks(q){var e=encodeURIComponent(q);return [['SciELO Perú','https://search.scielo.org/?q='+e+'&lang=es&filter%5Bin%5D%5B%5D=per'],['Redalyc','https://www.redalyc.org/busquedaArticuloFiltros.oa?q='+e],['ALICIA · repositorios científicos del Perú','https://alicia.concytec.gob.pe/vufind/Search/Results?lookfor='+e+'&type=AllFields']]}
+var noAcc=function(t){return t.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()};
+V.biblioteca=function(){
+  return '<div class="hd2"><div><h1>Biblioteca</h1><p>Material de consulta abierto para las especialidades del Colegio de Psicólogos del Perú.</p></div></div>'+
+   '<section class="card"><h2>Antes de usar los enlaces</h2><ul class="nl"><li>Los enlaces por especialidad abren búsquedas en SciELO, Redalyc y ALICIA, que son repositorios de acceso abierto. Cada documento tiene su propia licencia: revísala antes de reutilizarlo.</li><li>El Colegio no publica una lista de bibliografía «permitida». Estos enlaces son una selección de fuentes abiertas y no una aprobación oficial.</li><li>La web del Colegio muestra 13 capítulos de especialidad. Aquí «Política» y «Penitenciaria», que comparten el capítulo M, aparecen por separado para llegar a 14.</li></ul></section>'+
+   '<section class="card"><h2>Documentos oficiales del Colegio</h2><div class="list">'+OFI.map(function(o){return lk(o[1],o[0])}).join('')+'</div></section>'+
+   '<section class="card"><div class="ch"><h2>Especialidades</h2><span class="pill" id="bcount"></span></div><label class="sr" for="bq">Buscar especialidad</label><input class="input" id="bq" type="search" placeholder="Buscar especialidad" maxlength="60" autocomplete="off" value="'+esc(S.bq||'')+'"><div id="bib" class="bib"></div></section>';
+};
+function bibList(){
+  var q=noAcc(S.bq||'').trim(),rows=CHAP.filter(function(c){return !q||noAcc(c[1]).indexOf(q)>-1});
+  var el=$('#bib');if(!el)return;
+  $('#bcount').textContent=rows.length+' de '+CHAP.length;
+  el.innerHTML=rows.length?rows.map(function(c){return '<div><h3><span class="cap" title="Capítulo '+c[0]+'">'+c[0]+'</span>'+esc(c[1])+'</h3>'+bibLinks(c[2]).map(function(l){return lk(l[1],l[0])}).join('')+'</div>'}).join(''):'<div class="empty">Ninguna especialidad coincide con la búsqueda.</div>';
+}
+
+/* escalas */
+var SCALES={
+ gad:{n:'GAD-7',t:'Ansiedad generalizada',max:21,sev:gadTxt,items:['Sentirse nervioso, ansioso o muy alterado','No poder dejar de preocuparse o no poder controlar la preocupación','Preocuparse demasiado por diferentes cosas','Dificultad para relajarse','Estar tan inquieto que es difícil permanecer sentado','Molestarse o ponerse irritable fácilmente','Sentir miedo, como si algo terrible pudiera pasar']},
+ phq:{n:'PHQ-9',t:'Depresión',max:27,sev:phqTxt,items:['Poco interés o placer en hacer las cosas','Sentirse desanimado, deprimido o sin esperanza','Dificultad para dormir o dormir demasiado','Sentirse cansado o con poca energía','Poco apetito o comer en exceso','Sentirse mal consigo mismo, o sentir que es un fracaso o que ha quedado mal con su familia','Dificultad para concentrarse','Moverse o hablar tan despacio que otras personas lo notan, o estar muy inquieto','Pensamientos de que estaría mejor muerto o de hacerse daño de alguna manera']}};
+var OPT=['Nunca','Varios días','Más de la mitad de los días','Casi todos los días'];
+function ansOf(pid){if(!S.ans[pid])S.ans[pid]={gad:Array(7).fill(null),phq:Array(9).fill(null)};return S.ans[pid]}
+function scoreOf(a){return a.reduce(function(t,v){return t+(v||0)},0)}
+function scoreBox(p){
+  var k=S.scl,sc=SCALES[k],a=ansOf(p.id)[k],n=a.filter(function(v){return v!==null}).length,tot=scoreOf(a),done=n===a.length;
+  var h='<div class="ch"><b>'+sc.n+' · '+sc.t+'</b><span class="pill mono">'+n+'/'+a.length+'</span></div><div class="mono" style="font:600 34px var(--f-display);margin-top:6px">'+tot+'<span class="muted" style="font:500 14px var(--f-body)"> / '+sc.max+'</span></div>';
+  h+=done?'<div style="margin:6px 0 10px">Gravedad: <b>'+sc.sev(tot)+'</b></div>':'<div class="muted small" style="margin:6px 0 10px">Responde todas las preguntas para ver la gravedad.</div>';
+  h+=meter(Math.round(tot/sc.max*100),done?(tot>=15?'crit':tot>=10?'warn':'good'):'');
+  if(k==='phq'&&a[8]>0)h+='<div class="alert" role="alert" style="margin-top:12px">Ítem 9 con respuesta positiva. Evalúa el riesgo según tu protocolo clínico antes de cerrar la sesión.</div>';
+  return h+'<button class="btn pri" style="width:100%;margin-top:14px" data-a="scsave"'+(done?'':' disabled')+'>Guardar resultado</button>';
+}
+T.esc=function(p){
+  var k=S.scl,sc=SCALES[k],a=ansOf(p.id)[k];
+  var hist=(S.hist[p.id]||[]).concat([{d:dateFmt(p.ult)+' 2026',k:'GAD-7',v:p.gad[1],s:gadTxt(p.gad[1])},{d:dateFmt(p.ult)+' 2026',k:'PHQ-9',v:p.phq[1],s:phqTxt(p.phq[1])},{d:dateFmt(p.ini)+' 2026',k:'GAD-7',v:p.gad[0],s:gadTxt(p.gad[0])},{d:dateFmt(p.ini)+' 2026',k:'PHQ-9',v:p.phq[0],s:phqTxt(p.phq[0])}]);
+  var form=sc.items.map(function(t,i){return '<fieldset class="q"><legend>'+(i+1)+'. '+esc(t)+'</legend><div class="opts">'+OPT.map(function(o,j){return '<label><input type="radio" name="'+k+'-'+i+'" id="'+k+'-'+i+'-'+j+'" value="'+j+'"'+(a[i]===j?' checked':'')+'><span>'+j+' · '+o+'</span></label>'}).join('')+'</div></fieldset>'}).join('');
+  return '<div class="chips" role="group" aria-label="Escala">'+Object.keys(SCALES).map(function(x){return '<button class="chip" data-a="scl" data-k="'+x+'" aria-pressed="'+(S.scl===x)+'">'+SCALES[x].n+' · '+SCALES[x].t+'</button>'}).join('')+'</div>'+
+   '<div class="sc2"><section class="card"><h2>Durante las últimas 2 semanas, ¿con qué frecuencia le han molestado estos problemas?</h2><div>'+form+'</div></section><div style="display:grid;gap:16px;align-content:start" class="score"><section class="card" id="scoreBox">'+scoreBox(p)+'</section><p class="note">Escalas de uso libre. Son una ayuda y no reemplazan el juicio clínico.</p></div></div>'+
+   '<section class="card"><h2>Historial de escalas</h2><div class="list">'+hist.map(function(h){return '<div class="li"><div><b>'+h.k+'</b> · '+h.d+'</div><div class="chips"><span class="pill mono">'+h.v+' puntos</span><span class="pill">'+h.s+'</span></div></div>'}).join('')+'</div></section>';
+};
+function summaryText(p){
+  var s=soapOf(p)[0],h=S.hist[p.id]||[];
+  return ['EXPEDIENTE CLÍNICO (DEMO, DATOS SIMULADOS)','Paciente: '+p.n+' · '+p.id+' · '+p.age+' años','Motivo: '+p.mot,'Sesiones: '+p.ses+' · Inicio '+dateFmt(p.ini)+' 2026 · Última '+dateFmt(p.ult)+' 2026','Evolución: '+p.evo+' · Riesgo: '+p.rk,'GAD-7: '+p.gad[0]+' → '+p.gad[1]+' · PHQ-9: '+p.phq[0]+' → '+p.phq[1]].concat(h.map(function(x){return 'Registrado en la demo: '+x.k+' '+x.v+' ('+x.s+') '+x.d})).concat(['','Última nota SOAP (sesión '+s.n+', '+s.d+')','S: '+s.S,'O: '+s.O,'A: '+s.A,'P: '+s.P,'','Generado con IA y revisado por '+OWN[p.own]+'.']).join('\n');
+}
+function sumPanel(){return '<section class="card"><div class="ch"><h2>Resumen del expediente</h2><div class="chips"><button class="btn sm pri" data-a="copysum">Copiar</button><button class="btn sm" data-a="sumx">Cerrar</button></div></div><label class="sr" for="sumta">Resumen</label><textarea id="sumta" class="input" readonly rows="12" style="font:13px var(--f-mono);min-height:240px">'+esc(S.sum)+'</textarea><p class="note" style="margin-top:8px">Copia el texto para pegarlo en un documento. La descarga en PDF no está en la demo.</p></section>'}
+
+/* consentimiento informado */
+var CONV='v2.1',NOWTXT='05 nov 2026 · 10:12';
+var CITEMS=[['care','Atención psicológica y tratamiento de mis datos clínicos','Obligatorio para atenderme.'],['audio','Grabación de audio de las sesiones','Opcional.'],['ai','Uso de IA para transcribir y resumir','Opcional. Mi psicólogo/a siempre revisa el resultado.'],['msg','Mensajes por WhatsApp o correo','Opcional. Recordatorios y seguimiento.'],['teach','Uso anónimo de mi caso para docencia o supervisión','Opcional.']];
+var CMED=['En consulta','Enlace por WhatsApp o correo','Documento en papel escaneado'];
+function conOf(p){
+  var c=S.con[p.id];if(c)return c;
+  if(p.id==='PAC-0005')return {st:'pendiente'};
+  var it={care:true,audio:true,ai:true,msg:true,teach:false};
+  if(p.id==='PAC-0009'){it.audio=false;it.ai=false}
+  return {st:'vigente',v:'v2.1',d:dateFmt(p.ini)+' 2026',by:OWN[p.own],med:'En consulta',items:it,sig:p.n};
+}
+function conGate(p){var c=conOf(p);if(c.st!=='vigente'||!c.items.care)return 'care';if(!c.items.audio||!c.items.ai)return 'audio';return 'ok'}
+function conPill(p){var c=conOf(p);return c.st==='vigente'?'<span class="pill good">Consentimiento vigente</span>':c.st==='retirado'?'<span class="pill crit">Consentimiento retirado</span>':'<span class="pill warn">Consentimiento pendiente</span>'}
+function cfOf(p){if(!S.cf[p.id]){var c=conOf(p),it={};CITEMS.forEach(function(x){it[x[0]]=c.st==='vigente'?!!c.items[x[0]]:false});S.cf[p.id]={items:it,med:CMED[0],sig:''}}return S.cf[p.id]}
+function conOkSave(p){var f=cfOf(p);return !!f.items.care&&noAcc(f.sig).replace(/\s+/g,' ').trim()===noAcc(p.n)}
+function conForm(p){
+  var f=cfOf(p);
+  return '<section class="card"><h2>Registrar autorización</h2><p class="muted small">Lee el texto con el paciente, marca lo que autoriza y pídele que firme con su nombre completo.</p>'+
+   '<div class="cons-text" role="region" tabindex="0" aria-label="Texto del consentimiento informado, versión '+CONV+'"><p><b>Consentimiento informado ('+CONV+')</b></p><p>Autorizo que '+esc(OWN[p.own])+' y el equipo clínico de Centro Psicológico Renacer registren y traten mis datos de salud con el fin de brindarme atención psicológica, hacer su seguimiento y emitir la facturación correspondiente.</p><p>Entiendo que se registrarán notas de sesión y resultados de escalas, y que solo accederán las personas que participan en mi atención o su supervisión. Mis datos no se compartirán con terceros, salvo obligación legal.</p><p>Si autorizo el uso de IA, entiendo que el contenido de la sesión puede ser procesado para generar un resumen, y que un profesional lo revisa antes de incorporarlo a mi historia.</p><p>Puedo acceder a mis datos, corregirlos o pedir su eliminación, y retirar esta autorización en cualquier momento sin perder mi atención. La historia clínica se conserva el tiempo que exija la normativa.</p></div>'+
+   '<fieldset class="ckset"><legend>Autorizo</legend>'+CITEMS.map(function(x){return '<label class="ck"><input type="checkbox" name="ck" value="'+x[0]+'"'+(f.items[x[0]]?' checked':'')+'><span class="bx" aria-hidden="true"></span><span><b>'+x[1]+'</b><span class="small muted"> '+x[2]+'</span></span></label>'}).join('')+'</fieldset>'+
+   '<div class="g2" style="margin-top:14px"><div><label for="cmed" class="small muted">Cómo se obtuvo</label><select class="input" id="cmed">'+CMED.map(function(m){return '<option'+(f.med===m?' selected':'')+'>'+m+'</option>'}).join('')+'</select></div>'+
+   '<div><label for="csig" class="small muted">Firma: nombre completo del paciente</label><input class="input" id="csig" type="text" maxlength="80" autocomplete="off" placeholder="Nombre y apellidos" value="'+esc(f.sig)+'"></div></div>'+
+   '<div class="chips" style="margin-top:14px"><button class="btn pri" id="consave" data-a="consave"'+(conOkSave(p)?'':' disabled')+'>Registrar autorización</button>'+(S.cedit===p.id?'<button class="btn" data-a="concancel">Cancelar</button>':'')+'</div>'+
+   '<p class="note">Para firmar hay que marcar la primera casilla y escribir el nombre exacto del paciente. En la demo la firma es un nombre escrito y no se envía nada.</p></section>';
+}
+T.con=function(p){
+  var c=conOf(p),editing=c.st!=='vigente'||S.cedit===p.id,top='';
+  if(c.st==='vigente'){
+    top='<section class="card"><div class="ch"><h2>Estado de la autorización</h2><span class="pill good">Vigente</span></div><dl class="kv" style="margin:0"><div><dt>Texto aceptado</dt><dd class="mono">'+c.v+'</dd></div><div><dt>Fecha</dt><dd>'+esc(c.d)+'</dd></div><div><dt>Cómo se obtuvo</dt><dd>'+esc(c.med)+'</dd></div><div><dt>Registrado por</dt><dd>'+esc(c.by)+'</dd></div><div><dt>Firma</dt><dd>'+esc(c.sig)+'</dd></div></dl>'+
+     '<div class="list" style="margin-top:14px">'+CITEMS.map(function(x){return '<div class="li"><span>'+x[1]+'</span><span class="pill '+(c.items[x[0]]?'good':'')+'">'+(c.items[x[0]]?'Sí':'No')+'</span></div>'}).join('')+'</div>'+
+     (!c.items.audio||!c.items.ai?'<p class="pill warn" style="margin-top:12px" role="status">Sin autorización de audio o IA: las sesiones de este paciente no se pueden grabar ni procesar con IA.</p>':'')+
+     (editing?'':'<div class="chips" style="margin-top:14px"><button class="btn" data-a="conedit">Modificar autorizaciones</button><button class="btn" data-a="conout">Retirar consentimiento</button></div>')+'</section>';
+  }else if(c.st==='retirado'){
+    top='<section class="card"><div class="ch"><h2>Estado de la autorización</h2><span class="pill crit">Retirado</span></div><p>El paciente retiró su consentimiento el '+esc(c.d)+' (registrado por '+esc(c.by)+'). La grabación, la IA y la creación de nuevas sesiones están bloqueadas hasta registrar una nueva autorización.</p></section>';
+  }else{
+    top='<section class="card"><div class="ch"><h2>Estado de la autorización</h2><span class="pill warn">Pendiente</span></div><p>Todavía no hay un consentimiento firmado. No se pueden crear sesiones ni grabar audio hasta registrarlo.</p></section>';
+  }
+  return top+(editing?conForm(p):'');
+};
+
+/* portal del paciente */
+function mins(t){var a=t.split(':');return +a[0]*60+ +a[1]}
+function slotsFor(p){
+  var out=[],owned=PT.filter(function(x){return x.own===p.own}),d=1;
+  while(out.length<5&&d<25){
+    var dt=new Date(2026,10,5+d);d++;var w=dt.getDay();if(w===0||w===6)continue;
+    var occ=dayAppts(dt.getFullYear(),dt.getMonth(),dt.getDate(),owned).filter(function(a){return a.st!=='Cancelada'}).map(function(a){return mins(a.t)});
+    var free=['09:00','10:30','12:00','15:00','16:30'].filter(function(t){return occ.every(function(o){return Math.abs(o-mins(t))>=60})});
+    out.push({k:keyOf(dt.getFullYear(),dt.getMonth(),dt.getDate()),dt:dt,free:free});
+  }
+  return out;
+}
+V.portal=function(){
+  var p=curPat(),nx=nextAppt(p),sl=slotsFor(p),first=p.n.split(' ')[0],b=S.booked&&S.booked.pid===p.id?S.booked:null;
+  var msg=b?'<div class="pill good" role="status" style="margin-bottom:6px">Reserva enviada para '+dayLabel(new Date(+b.k.slice(0,4),+b.k.slice(5,7)-1,+b.k.slice(8)))+' · '+b.t+'. '+OWN[p.own]+' la confirmará.</div>':'';
+  return '<div><button class="btn sm" data-a="go" data-r="ficha">← Expediente</button></div>'+
+   '<div class="pill info" style="justify-self:start">Vista previa de lo que ve el paciente. En la demo no se envía nada.</div>'+
+   '<section class="card" style="max-width:640px"><div class="pn" style="gap:14px">'+avatar(p.n)+'<div><h1 style="font-size:22px">Hola, '+esc(first)+'</h1><p class="muted">Tu espacio en Centro Psicológico Renacer</p></div></div></section>'+
+   '<section class="card" style="max-width:640px"><h2>Tu próxima cita</h2>'+(nx?'<div class="li"><div><b>'+dayLabel(nx.dt)+' · '+nx.t+'</b><div class="small muted">Con '+OWN[p.own]+' · 50 minutos</div></div>'+stPill(nx.st)+'</div>':'<p class="muted">No tienes citas agendadas.</p>')+'</section>'+
+   '<section class="card" style="max-width:640px"><h2>Reservar una cita</h2>'+msg+sl.map(function(d){return '<div style="margin-top:12px"><div class="small muted" style="margin-bottom:6px">'+DOW[d.dt.getDay()]+' '+d.dt.getDate()+' de '+MESL[d.dt.getMonth()]+'</div><div class="slots">'+(d.free.length?d.free.map(function(t){var on=S.slot&&S.slot.k===d.k&&S.slot.t===t;return '<button class="chip mono" data-a="slot" data-k="'+d.k+'" data-t="'+t+'" aria-pressed="'+!!on+'">'+t+'</button>'}).join(''):'<span class="muted small">Sin horarios libres</span>')+'</div></div>'}).join('')+
+   '<button class="btn pri" data-a="book" style="margin-top:16px"'+(S.slot?'':' disabled')+'>Confirmar reserva</button></section>';
+};
+
+/* radar */
+V.radar=function(){
+  var v=vis(),p=byId(S.rad);if(!canSee(p))p=v[0];S.rad=p.id;
+  var rv=radarVals(p),an=anxSeries(p),es=estSeries(p),n=an.length,mid=Math.ceil(n/2);
+  var opts=v.map(function(x){return '<option value="'+x.id+'"'+(x.id===p.id?' selected':'')+'>'+esc(x.n)+'</option>'}).join('');
+  return '<div class="hd2"><div><h1>Radar Clínico</h1><p>Evolución de seis dimensiones: inicio, punto medio y estado actual.</p></div><div style="min-width:220px"><label class="lb" for="rsel">Paciente</label><select class="input" id="rsel">'+opts+'</select></div></div>'+
+   '<div class="g2"><section class="card"><h2>Perfil clínico</h2>'+radarSvg([{v:rv.ini,c:'c3'},{v:rv.mid,c:'c2'},{v:rv.now,c:'c1'}])+'<div class="legend"><span><i style="background:var(--muted)"></i>Sesión 1</span><span><i style="background:var(--c2)"></i>Sesión '+mid+'</span><span><i style="background:var(--c1)"></i>Sesión '+n+'</span></div><p class="note" style="margin-top:8px">Ansiedad y estrés: menor es mejor. Ánimo, sueño, compromiso y adherencia: mayor es mejor.</p></section>'+
+   '<section class="card"><h2>Ansiedad</h2><div class="chips" style="margin-bottom:6px"><span class="pill mono">Sesión 1 · '+an[0]+'%</span><span class="pill mono">Sesión '+mid+' · '+an[mid-1]+'%</span><span class="pill mono">Sesión '+n+' · '+an[n-1]+'%</span><span class="pill good">Tendencia ↓</span></div>'+lines([{v:an,c:'c1'}],an.map(function(_,i){return 'S'+(i+1)}),{unit:'%',area:true,every:n>8?2:1,min:20,max:100,label:'Ansiedad por sesión'})+'</section></div>'+
+   '<div class="g3"><section class="card"><h2>Estrés</h2>'+lines([{v:es,c:'c2'}],['S1','S3','S6','S9','S12'].slice(0,5),{unit:'%',min:20,max:100,h:180,label:'Estrés en cinco mediciones'})+'</section>'+
+   '<section class="card"><h2>Compromiso terapéutico</h2><div class="v mono" style="font:600 34px var(--f-display)">'+p.comp+'%</div>'+meter(p.comp,'good')+'</section>'+
+   '<section class="card"><h2>Riesgo de abandono</h2><div class="ch"><span>'+(p.ab<20?'Bajo':p.ab<35?'Moderado':'Alto')+'</span><b class="mono" style="font:600 34px var(--f-display)">'+p.ab+'%</b></div>'+meter(p.ab,p.ab<20?'good':p.ab<35?'warn':'crit')+'</section></div>';
+};
+
+/* seguimiento WhatsApp */
+V.seguimiento=function(){
+  var s=S.wa,st=s==='ask'?['warn','Pendiente de confirmación']:s==='ok'?['good','Asistencia confirmada ✅']:['info','Reprogramada'];
+  var ch='<div class="bub">Hola Ana.<br>Recuerda implementar las técnicas trabajadas en sesión.<br><span class="muted">Equipo Gestor Psicológico.</span><span class="tm">Mié 09:40</span></div><div class="bub">Hola Ana.<br>Tu próxima sesión es el viernes 06/11 a las 09:00.<br>¿Deseas confirmar?'+(s==='ask'?'<div class="acts"><button class="btn sm pri" data-a="wa" data-v="ok">Confirmar</button><button class="btn sm" data-a="wa" data-v="rs">Reprogramar</button></div>':'')+'<span class="tm">Hoy 10:05</span></div>';
+  if(s==='ok')ch+='<div class="bub me">Confirmar</div><div class="bub">Perfecto, Ana. Asistencia confirmada ✅ Te esperamos el viernes 06/11 a las 09:00.</div>';
+  if(s==='rs')ch+='<div class="bub me">Reprogramar</div><div class="bub">Estas son las horas disponibles:<div class="acts"><button class="btn sm" data-a="wa" data-v="p1">Lun 09/11 · 09:00</button><button class="btn sm" data-a="wa" data-v="p2">Mar 10/11 · 10:00</button></div></div>';
+  if(s==='p1'||s==='p2')ch+='<div class="bub me">Reprogramar</div><div class="bub me">'+(s==='p1'?'Lun 09/11 · 09:00':'Mar 10/11 · 10:00')+'</div><div class="bub">Listo, reprogramamos tu sesión para el '+(s==='p1'?'lunes 09/11 a las 09:00':'martes 10/11 a las 10:00')+'.</div>';
+  var tg=[['a','Recordatorio 24 horas antes'],['b','Recordatorio 2 horas antes'],['c','Tareas entre sesiones'],['d','Encuesta de bienestar semanal'],['e','Reactivación de pacientes inactivos']];
+  return '<div class="hd2"><div><h1>Seguimiento</h1><p>Recordatorios y confirmaciones por WhatsApp, sin trabajo manual.</p></div></div>'+
+   '<div class="g2"><section class="card"><div class="phone"><div class="ph-h">'+avatar('Gestor Psicológico')+'<div><b>Gestor Psicológico</b><div class="small">Conversación con Ana Ramírez</div></div></div><div class="ph-b">'+ch+'</div></div><div class="chips" style="justify-content:center;margin-top:12px"><button class="btn sm" data-a="wa" data-v="ask"'+(s==='ask'?' disabled':'')+'>Reiniciar conversación</button></div></section>'+
+   '<div style="display:grid;gap:16px;align-content:start"><section class="card"><h2>Estado de la cita</h2><div class="li"><div><b>Ana Ramírez</b><div class="small muted">Viernes 06/11 · 09:00</div></div><span class="pill '+st[0]+'">'+st[1]+'</span></div></section>'+
+   '<section class="card"><h2>Automatizaciones</h2>'+tg.map(function(t){return '<div class="tg"><span id="tl-'+t[0]+'">'+t[1]+'</span><button class="sw" role="switch" aria-checked="'+S.auto[t[0]]+'" aria-labelledby="tl-'+t[0]+'" data-a="tg" data-k="'+t[0]+'"></button></div>'}).join('')+'</section>'+
+   '<div class="gk">'+kpi('Confirmación','87%','Últimos 30 días')+kpi('Respuesta','94%','En menos de 2 h')+'</div></div></div>';
+};
+
+/* facturación */
+V.facturacion=function(){
+  var adm=S.user.r==='adm',sc=adm?S.bill.scope:'me',tab=adm?S.bill.tab:'res';
+  var D=sc==='me'?{c:78,i:4850,pe:320,pa:72,pn:6,m:[3180,3540,3920,4180,4510,4850]}:{c:518,i:24380,pe:1640,pa:489,pn:29,m:[14200,16100,18350,20400,22300,24380]};
+  var head='<div class="hd2"><div><h1>Facturación</h1><p>Octubre 2026'+(sc==='me'?' · '+S.user.n:' · Centro Psicológico Renacer')+'</p></div><div class="chips">'+(adm?'<button class="chip" data-a="bs" data-v="me" aria-pressed="'+(sc==='me')+'">Un profesional</button><button class="chip" data-a="bs" data-v="clinic" aria-pressed="'+(sc==='clinic')+'">Clínica completa</button>':'')+'</div></div>';
+  var tabs=adm?'<div class="tabs" role="tablist"><button role="tab" data-a="bt" data-v="res" aria-selected="'+(tab==='res')+'">Resumen</button><button role="tab" data-a="bt" data-v="planes" aria-selected="'+(tab==='planes')+'">Planes</button></div>':'';
+  if(tab==='planes')return head+tabs+plans();
+  var vv=vis(),amts=[55,55,50,55,50,55],rows='';
+  for(var i=0;i<6;i++){var p=vv[(i*2)%vv.length];rows+='<tr><td class="mono">FAC-'+(1038+i)+'</td><td>'+esc(p.n)+'</td><td>Consulta individual</td><td class="mono">'+(20+i)+'/10/2026</td><td class="mono">US$ '+amts[i]+'</td><td><button class="btn sm" data-a="demo" data-m="Recordatorio de pago enviado (simulado)">Recordar pago</button></td></tr>'}
+  return head+tabs+'<div class="gk">'+kpi('Consultas realizadas',nf(D.c),'Octubre')+kpi('Ingresos','US$ '+nf(D.i),'+7% vs. septiembre')+kpi('Pendiente de cobro','US$ '+nf(D.pe),D.pn+' consultas')+kpi('Pagadas',nf(D.pa),'de '+nf(D.pa+D.pn))+'</div>'+
+   '<div class="g2"><section class="card"><h2>Ingresos de los últimos 6 meses (US$)</h2>'+bars(D.m,['May','Jun','Jul','Ago','Sep','Oct'],{L:52,fmt:function(v){return nf(Math.round(v))},label:'Ingresos mensuales en dólares'})+'</section>'+
+   '<section class="card"><h2>Cobros pendientes</h2><div class="tw"><table style="min-width:480px"><thead><tr><th>Factura</th><th>Paciente</th><th>Concepto</th><th>Fecha</th><th>Monto</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section></div>';
+};
+function plans(){
+  var an=S.cyc==='y',P=[['Basic',19,['Pacientes','Agenda','Historia clínica']],['Pro',49,['Todo lo anterior','IA Clínica','SOAP automático','Seguimiento']],['Clínica',99,['Equipos','Dashboard ejecutivo','Supervisor IA','Reportes']]];
+  return '<div class="chips"><button class="chip" data-a="cyc" data-v="m" aria-pressed="'+!an+'">Mensual</button><button class="chip" data-a="cyc" data-v="y" aria-pressed="'+an+'">Anual (−20%)</button></div><div class="g3">'+P.map(function(x){var cur=x[0]==='Clínica';return '<section class="card plan'+(cur?' cur':'')+'"><div class="ch"><h2>'+x[0]+'</h2>'+(cur?'<span class="pill good">Plan actual</span>':'')+'</div><div class="pr">US$'+(an?Math.round(x[1]*.8):x[1])+'<span class="muted small" style="font:500 13px var(--f-body)"> /mes</span></div><ul>'+x[2].map(function(f){return '<li>'+f+'</li>'}).join('')+'</ul><button class="btn'+(cur?'':' pri')+'" data-a="demo" data-m="Cambio de plan simulado"'+(cur?' disabled':'')+'>'+(cur?'Plan actual':'Elegir '+x[0])+'</button></section>'}).join('')+'</div>';
+}
+
+/* equipo */
+V.equipo=function(){
+  var E=[['carlos',84,162,4850,91,482],['ana',68,140,6420,90,391],['laura',51,120,7130,88,208],['rojas',40,96,5980,86,155]];
+  return '<div class="hd2"><div><h1>Equipo Clínico</h1><p>Centro Psicológico Renacer · Octubre 2026</p></div>'+(S.user.r==='adm'?'<button class="btn pri" data-a="demo" data-m="Invitación simulada">Invitar profesional</button>':'')+'</div>'+
+   '<div class="gk">'+kpi('Pacientes activos','243','+11 este mes')+kpi('Sesiones del mes','518','+9% vs. septiembre')+(S.user.r==='adm'?kpi('Ingresos','US$ 24,380','+7% vs. septiembre'):kpi('Notas IA','1,236','Este año'))+kpi('Retención','89%','Últimos 6 meses')+'</div>'+
+   '<section class="card" style="padding:6px 8px"><div class="tw"><table><thead><tr><th>Profesional</th><th>Pacientes</th><th>Sesiones</th>'+(S.user.r==='adm'?'<th>Ingresos</th>':'')+'<th>Retención</th><th>Notas IA</th></tr></thead><tbody>'+E.map(function(e){return '<tr><td><div class="pn">'+avatar(OWN[e[0]])+'<b>'+OWN[e[0]]+'</b></div></td><td class="mono">'+e[1]+'</td><td class="mono">'+e[2]+'</td>'+(S.user.r==='adm'?'<td class="mono">US$ '+nf(e[3])+'</td>':'')+'<td class="mono">'+e[4]+'%</td><td class="mono">'+e[5]+'</td></tr>'}).join('')+'</tbody></table></div></section>';
+};
+
+/* configuración */
+V.config=function(){
+  var M=[['Ver sus pacientes','✓','✓','✓'],['Ver todos los pacientes','—','✓','✓'],['Notas SOAP con IA','✓','Solo lectura','✓'],['Equipo clínico','—','✓','✓'],['Facturación','Propia','—','Toda la clínica'],['Gestionar psicólogos','—','—','✓'],['Gestionar permisos','—','—','✓']];
+  var u=S.user;
+  return '<div class="hd2"><div><h1>Configuración</h1><p>Perfil, permisos y preferencias.</p></div></div>'+
+   '<div class="g2"><section class="card"><h2>Tu perfil</h2><div class="pn" style="gap:14px">'+avatar(u.n,'lg')+'<div><b style="font-size:16px">'+esc(u.n)+'</b><div class="muted">'+u.rl+'</div><div class="mono small">'+esc(u.e)+'</div></div></div><div class="chips" style="margin-top:14px"><button class="btn sm" data-a="theme">Cambiar tema</button><button class="btn sm" data-a="logout">Cerrar sesión</button></div></section>'+
+   '<section class="card"><h2>Seguridad</h2><div class="list"><div class="li"><span>Autenticación en dos pasos</span><span class="pill good">Activa</span></div><div class="li"><span>Cierre por inactividad</span><span class="pill mono">15 min</span></div><div class="li"><span>Audios y notas cifrados</span><span class="pill good">Sí</span></div></div><p class="note" style="margin-top:8px">Valores de ejemplo para la presentación.</p></section></div>'+
+   '<section class="card"><h2>Permisos por rol</h2><div class="tw"><table><thead><tr><th>Capacidad</th><th>Psicólogo/a</th><th>Supervisor/a</th><th>Administrador/a</th></tr></thead><tbody>'+M.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>'}).join('')+'</tbody></table></div></section>';
+};
+V.locked=function(){return '<section class="card empty"><h2>Acceso restringido</h2><p style="margin:8px 0 16px">Tu rol ('+S.user.rl+') no incluye este módulo.</p><button class="btn pri" data-a="go" data-r="dashboard">Volver al dashboard</button></section>'};
+
+/* ---------- render ---------- */
+function render(){
+  var lg=$('#login'),ap=$('#app');
+  if(!S.user){$('#view').innerHTML='';$('#nav').innerHTML='';$('#uchip').innerHTML='';$('#ttl').textContent='';lg.hidden=false;ap.hidden=true;return}
+  lg.hidden=true;ap.hidden=false;
+  var r=S.route,ok=allowed(r),nav=(r==='ficha'||r==='portal')?'pacientes':r;
+  $('#nav').innerHTML=R.filter(function(x){return allowed(x.id)}).map(function(x){return '<button data-a="go" data-r="'+x.id+'"'+(x.id===nav?' aria-current="page"':'')+'>'+icon(x.i)+x.l+'</button>'}).join('');
+  $('#uchip').innerHTML=avatar(S.user.n)+'<div><b>'+esc(S.user.n)+'</b><span>'+S.user.rl+'</span></div>';
+  var d=routeDef(r);$('#ttl').textContent=r==='ficha'?'Expediente clínico':r==='portal'?'Portal del paciente':(d?d.l:'');
+  $('#menub').innerHTML=icon('menu');
+  var dark=document.documentElement.getAttribute('data-theme')==='dark'||(!document.documentElement.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);
+  $('#themeb').innerHTML=icon(dark?'sun':'moon');
+  if(r!=='sesiones')flowStopIfIdle();
+  $('#view').innerHTML=ok?V[r]():V.locked();
+  if(ok&&r==='pacientes')patRows();
+  if(ok&&r==='sesiones')drawFlow();
+  if(ok&&r==='biblioteca')bibList();
+  if(S.last!==r){window.scrollTo(0,0);S.last=r}
+  closeMenu();drawTour();
+}
+function flowStopIfIdle(){}
+function closeMenu(){$('#side').classList.remove('open');$('#scrim').classList.remove('on')}
+function toast(m){var t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.hidden=true},2600)}
+function go(r){
+  if(!r)return;S.route=r;
+  if(location.hash.slice(1)!==r)location.hash=r;
+  render();
+}
+window.addEventListener('hashchange',function(){
+  if(!S.user)return;var h=location.hash.slice(1);
+  if(h&&(h==='ficha'||h==='portal'||routeDef(h))&&h!==S.route){S.route=h;render()}
+});
+
+/* ---------- tour ---------- */
+var TOUR=[
+ {r:'dashboard',t:'Dirección ve asistencia, notas IA y horas ahorradas de un vistazo.'},
+ {r:'pacientes',t:'El CRM muestra estado, riesgo y próxima cita de cada paciente.'},
+ {r:'ficha',pid:'PAC-0001',t:'El expediente reúne sesiones, SOAP, documentos y patrones detectados por la IA.'},
+ {r:'sesiones',auto:true,t:'Se carga el audio. La IA transcribe, resume y redacta la nota SOAP.'},
+ {r:'radar',t:'El radar compara el estado del paciente al inicio, a mitad y hoy.'},
+ {r:'seguimiento',t:'El sistema recuerda la cita por WhatsApp y registra la confirmación.'},
+ {r:'equipo',t:'La dirección visualiza las métricas de toda la clínica.'},
+ {r:'facturacion',t:'Facturación y planes en el mismo lugar.'}];
+function tourSteps(){return TOUR.filter(function(s){return allowed(s.r)})}
+function tourGo(i){
+  var st=tourSteps();if(i<0||i>=st.length)return;S.tour.i=i;var s=st[i];
+  if(s.pid){var p=byId(s.pid);S.pid=canSee(p)?s.pid:vis()[0].id;S.tab='res'}
+  if(s.r==='sesiones'){flowStop();S.fl={st:'idle',n:0}}
+  go(s.r);
+  if(s.auto)setTimeout(function(){if(S.route==='sesiones'&&S.tour.on)flowGo()},350);
+}
+function drawTour(){
+  var b=$('#tourbox');if(!S.tour.on||!S.user){b.hidden=true;return}
+  var st=tourSteps(),i=S.tour.i;b.hidden=false;
+  b.innerHTML='<div class="small" style="opacity:.75">Recorrido · paso '+(i+1)+' de '+st.length+'</div><div>'+esc(st[i].t)+'</div><div class="tr"><button class="btn sm" data-a="tourx">Salir</button><div class="chips"><button class="btn sm" data-a="tourp"'+(i===0?' disabled':'')+'>Anterior</button><button class="btn sm pri" data-a="tourn">'+(i===st.length-1?'Terminar':'Siguiente')+'</button></div></div>';
+}
+
+/* ---------- acceso ---------- */
+function drawRoles(){
+  $('#roles').innerHTML=US.map(function(u){return '<button type="button" class="role" data-a="role" data-id="'+u.id+'" aria-pressed="'+(S.pick===u.id)+'">'+avatar(u.n)+'<span><b>'+esc(u.n)+'</b><br><span class="small muted">'+u.rl+' · '+u.d+'</span></span></button>'}).join('');
+  var u=US.filter(function(x){return x.id===S.pick})[0];$('#em').value=u.e;
+}
+function doLogin(){
+  var em=$('#em').value.trim().toLowerCase(),u=US.filter(function(x){return x.e===em})[0],err=$('#lerr');
+  if(!em||em.indexOf('@')<1){err.textContent='Escribe un correo válido o elige un perfil de la lista.';err.hidden=false;$('#em').focus();return}
+  if(!u){err.textContent='Este correo no está en la demo. Elige uno de los tres perfiles.';err.hidden=false;return}
+  err.hidden=true;S.user=u;$('#pw').value='';
+  S.route='dashboard';S.pid=vis()[0].id;S.rad=S.pid;S.tab='res';S.last='';S.q='';S.fil='all';S.chat=[];S.wa='ask';S.fl={st:'idle',n:0};S.bill={scope:'me',tab:'res'};
+  if(location.hash!=='#dashboard')location.hash='dashboard';
+  render();$('#view').focus({preventScroll:true});
+}
+function logout(){
+  flowStop();S.user=null;S.tour.on=false;$('#tourbox').hidden=true;
+  history.replaceState(null,'',location.pathname+location.search);
+  render();drawRoles();$('#lgo').focus();
+}
+
+/* ---------- eventos ---------- */
+var A={
+ role:function(e){S.pick=e.dataset.id;drawRoles()},
+ forgot:function(e,ev){ev.preventDefault();toast('En la demo no hay recuperación de contraseña')},
+ go:function(e){if(S.tour.on&&e.dataset.r!==S.route){}go(e.dataset.r)},
+ pat:function(e){var p=byId(e.dataset.id);if(!canSee(p)){toast('No tienes acceso a este paciente');return}S.pid=p.id;S.tab='res';S.sum=null;S.slot=null;S.cedit=null;go('ficha')},
+ tab:function(e){S.tab=e.dataset.t;render()},
+ fil:function(e){S.fil=e.dataset.f;render()},
+ day:function(e){S.cal.d=+e.dataset.d;render()},
+ cal:function(e){var m=S.cal.m+ +e.dataset.s;if(m<9||m>11)return;S.cal.m=m;S.cal.d=1;render()},
+ flowgo:function(){flowGo()},
+ flowreset:function(){flowStop();S.fl={st:'idle',n:0};drawFlow()},
+ flowsave:function(){S.pid=vis()[0].id;if(!canSee(byId('PAC-0001'))){toast('Nota guardada en el expediente (simulado)');return}S.pid='PAC-0001';S.tab='soap';toast('Nota SOAP guardada en el expediente');go('ficha')},
+ ask:function(e){askAI(+e.dataset.q)},
+ wa:function(e){S.wa=e.dataset.v;render()},
+ tg:function(e){S.auto[e.dataset.k]=!S.auto[e.dataset.k];render()},
+ bs:function(e){S.bill.scope=e.dataset.v;render()},
+ bt:function(e){S.bill.tab=e.dataset.v;render()},
+ cyc:function(e){S.cyc=e.dataset.v;render()},
+ conedit:function(){var p=curPat();delete S.cf[p.id];S.cedit=p.id;render()},
+ concancel:function(){var p=curPat();delete S.cf[p.id];S.cedit=null;render()},
+ conout:function(){var p=curPat();S.con[p.id]={st:'retirado',d:NOWTXT,by:S.user.n};delete S.cf[p.id];S.cedit=null;toast('Consentimiento retirado. Grabación e IA bloqueadas');render()},
+ consave:function(){var p=curPat();if(!conOkSave(p))return;var f=cfOf(p),it={};CITEMS.forEach(function(x){it[x[0]]=!!f.items[x[0]]});S.con[p.id]={st:'vigente',v:CONV,d:NOWTXT,by:S.user.n,med:f.med,items:it,sig:f.sig.trim()};delete S.cf[p.id];S.cedit=null;toast('Autorización registrada');render()},
+ concta:function(){S.pid=curPat().id;S.tab='con';go('ficha')},
+ demo:function(e){toast(e.dataset.m)},
+ theme:function(){var h=document.documentElement,dark=h.getAttribute('data-theme')==='dark'||(!h.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);h.setAttribute('data-theme',dark?'light':'dark');render()},
+ menu:function(){$('#side').classList.toggle('open');$('#scrim').classList.toggle('on')},
+ logout:function(){logout()},
+ tour:function(){S.tour.on=true;tourGo(0)},
+ tourn:function(){var n=tourSteps().length;if(S.tour.i>=n-1){S.tour.on=false;drawTour()}else tourGo(S.tour.i+1)},
+ tourp:function(){tourGo(S.tour.i-1)},
+ tourx:function(){S.tour.on=false;drawTour()},
+ scl:function(e){S.scl=e.dataset.k;render()},
+ scsave:function(){var p=curPat(),k=S.scl,sc=SCALES[k],a=ansOf(p.id)[k];if(a.some(function(v){return v===null}))return;var v=scoreOf(a);(S.hist[p.id]=S.hist[p.id]||[]).unshift({d:'05 Nov 2026',k:sc.n,v:v,s:sc.sev(v)});ansOf(p.id)[k]=Array(a.length).fill(null);toast(sc.n+' guardado: '+v+' puntos');render()},
+ slot:function(e){S.slot={k:e.dataset.k,t:e.dataset.t};render()},
+ book:function(){var p=curPat();if(!S.slot)return;S.extra.push({p:p,key:S.slot.k,t:S.slot.t});S.booked={pid:p.id,k:S.slot.k,t:S.slot.t};S.slot=null;toast('Reserva enviada');render()},
+ sum:function(){var p=curPat();S.sum=summaryText(p);S.sumPid=p.id;render();var t=$('#sumta');if(t)t.focus()},
+ sumx:function(){S.sum=null;render()},
+ copysum:function(){var t=$('#sumta');if(!t)return;var ok=function(){toast('Resumen copiado')},no=function(){t.focus();t.select();toast('Selecciona el texto y cópialo con Ctrl+C')};try{navigator.clipboard.writeText(S.sum).then(ok,no)}catch(e){no()}}
+};
+document.addEventListener('click',function(ev){
+  var el=ev.target.closest('[data-a]');if(!el||el.disabled)return;
+  var f=A[el.dataset.a];if(f)f(el,ev);
+});
+document.addEventListener('keydown',function(ev){
+  if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches&&ev.target.matches('tr.clk')){ev.preventDefault();A.pat(ev.target)}
+  if(ev.key==='Escape')closeMenu();
+});
+document.addEventListener('input',function(ev){if(ev.target.id==='csig'){var p0=curPat();cfOf(p0).sig=ev.target.value.slice(0,80);var b0=$('#consave');if(b0)b0.disabled=!conOkSave(p0)}if(ev.target.id==='q'){S.q=ev.target.value.slice(0,60);patRows()}if(ev.target.id==='bq'){S.bq=ev.target.value.slice(0,60);bibList()}});
+document.addEventListener('change',function(ev){
+  var t=ev.target;
+  if(t.id==='rsel'){S.rad=t.value;render()}
+  if(t.type==='checkbox'&&t.name==='ck'){var p1=curPat();cfOf(p1).items[t.value]=t.checked;var b1=$('#consave');if(b1)b1.disabled=!conOkSave(p1)}
+  if(t.id==='cmed'){cfOf(curPat()).med=t.value}
+  if(t.type==='radio'&&/^(gad|phq)-\d+$/.test(t.name)){var m=t.name.split('-'),p=curPat();ansOf(p.id)[m[0]][+m[1]]=+t.value;var b=$('#scoreBox');if(b)b.innerHTML=scoreBox(p)}
+});
+$('#lf').addEventListener('submit',function(ev){ev.preventDefault();doLogin()});
+drawRoles();render();
+})();
+</script>
+</body></html>
