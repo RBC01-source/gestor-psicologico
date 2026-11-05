@@ -143,6 +143,49 @@ async function functional(browser) {
   await p.click(`.cal button[data-d="${+k0.slice(8)}"]`);
   ok((await txt(p, 'main')).includes(t0) && (await txt(p, 'main')).includes('Pendiente'), 'La reserva aparece en la agenda como Pendiente');
 
+  // Consentimiento
+  await go(p, 'pacientes');
+  await p.click('[data-a="pat"][data-id="PAC-0001"]');
+  await p.click('[data-t="con"]');
+  ok((await txt(p, '[role="tabpanel"]')).includes('Vigente') && (await txt(p, '[role="tabpanel"]')).includes('v2.1'), 'Consentimiento: paciente con autorización vigente y versión del texto');
+  ok((await txt(p, '#view')).includes('Consentimiento vigente'), 'Consentimiento: el estado aparece en la cabecera de la ficha');
+  await p.click('[data-a="conout"]');
+  ok((await txt(p, '[role="tabpanel"]')).includes('Retirado') && !!(await p.$('#csig')), 'Consentimiento: al retirarlo se muestra Retirado y el formulario para uno nuevo');
+  await p.click('#nav button[data-r="sesiones"]'); await p.waitForTimeout(80);
+  ok((await txt(p, 'main')).includes('No se puede crear una sesión') && !(await p.$('[data-a="flowgo"]')), 'Sesiones: sin consentimiento no se puede procesar');
+  await p.click('[data-a="concta"]');
+  ok(!!(await p.$('#csig')), 'Sesiones: "Ir a Consentimiento" abre la pestaña de la ficha');
+  ok(await p.$eval('#consave', (b) => b.disabled), 'Consentimiento: registrar está deshabilitado al inicio');
+  await p.fill('#csig', 'Ana Ramírez');
+  ok(await p.$eval('#consave', (b) => b.disabled), 'Consentimiento: firma sin marcar la casilla obligatoria no habilita el registro');
+  await p.check('input[name="ck"][value="care"]');
+  await p.fill('#csig', 'Otra Persona');
+  ok(await p.$eval('#consave', (b) => b.disabled), 'Consentimiento: una firma que no coincide con el paciente no habilita el registro');
+  await p.fill('#csig', ' ana  ramirez ');
+  ok(await p.$eval('#consave', (b) => !b.disabled), 'Consentimiento: firma correcta (sin importar tildes ni mayúsculas) habilita el registro');
+  await p.selectOption('#cmed', 'Enlace por WhatsApp o correo');
+  await p.click('#consave');
+  let ct = await txt(p, '[role="tabpanel"]');
+  ok(ct.includes('Vigente') && ct.includes('Enlace por WhatsApp o correo') && ct.includes('Dr. Carlos Mendoza'), 'Consentimiento: se guarda con medio y profesional que lo registró');
+  ok(ct.includes('Sin autorización de audio o IA'), 'Consentimiento: si no autorizó audio ni IA se avisa que no se puede grabar');
+  await p.click('#nav button[data-r="sesiones"]'); await p.waitForTimeout(80);
+  ok((await txt(p, 'main')).includes('no autorizó la grabación'), 'Sesiones: sin autorización de audio/IA no se procesa con IA');
+  await p.click('[data-a="concta"]');
+  await p.click('[data-a="conedit"]');
+  await p.check('input[name="ck"][value="audio"]'); await p.check('input[name="ck"][value="ai"]');
+  await p.fill('#csig', 'Ana Ramírez');
+  await p.click('#consave');
+  await p.click('#nav button[data-r="sesiones"]'); await p.waitForTimeout(80);
+  ok(!!(await p.$('[data-a="flowgo"]')), 'Sesiones: con audio e IA autorizados vuelve a estar disponible');
+  await go(p, 'pacientes');
+  await p.click('[data-a="pat"][data-id="PAC-0005"]');
+  await p.click('[data-t="con"]');
+  ok((await txt(p, '[role="tabpanel"]')).includes('Pendiente'), 'Consentimiento: un paciente sin firma figura como Pendiente');
+  await p.click('[data-t="doc"]');
+  ok((await txt(p, '[role="tabpanel"]')).includes('Aún no se ha registrado'), 'Documentos: refleja que no hay consentimiento firmado');
+  await go(p, 'pacientes');
+  await p.click('[data-a="pat"][data-id="PAC-0001"]');
+
   // Agenda
   await go(p, 'agenda');
   ok((await txt(p, 'main')).includes('Noviembre 2026'), 'Agenda abre en noviembre 2026');
@@ -456,6 +499,15 @@ async function devicesSuite(browser) {
     c = await clickability(p, 'escalas', minH); probs.bad.push(...c.bad.map((x) => 'escalas:' + x)); probs.small.push(...c.small.map((x) => 'escalas:' + x));
     await p.evaluate(() => window.scrollTo(0, 0)); await p.screenshot({ path: path.join(OUT, slug + '_escalas.png') });
     await p.evaluate(() => window.scrollTo(0, 0));
+    await p.click('[data-t="con"]'); await p.waitForTimeout(60);
+    await p.click('[data-a="conout"]'); await p.waitForTimeout(60);
+    await p.evaluate(() => { document.querySelector('#toast').hidden = true; });
+    o = await overflowX(p); if (o.sw > o.iw + 1 || o.off.length) probs.overflow.push('consentimiento ' + o.sw + '>' + o.iw + ' ' + o.off.join(','));
+    c = await clickability(p, 'consentimiento', minH); probs.bad.push(...c.bad.map((x) => 'consentimiento:' + x)); probs.small.push(...c.small.map((x) => 'consentimiento:' + x));
+    await p.screenshot({ path: path.join(OUT, slug + '_consentimiento.png') });
+    await p.evaluate(() => window.scrollTo(0, 0));
+    await p.click('[data-t="esc"]'); await p.waitForTimeout(60);
+    await p.evaluate(() => window.scrollTo(0, 0));
     await p.click('[data-a="go"][data-r="portal"]'); await p.waitForTimeout(60);
     o = await overflowX(p); if (o.sw > o.iw + 1 || o.off.length) probs.overflow.push('portal ' + o.sw + '>' + o.iw + ' ' + o.off.join(','));
     c = await clickability(p, 'portal', minH); probs.bad.push(...c.bad.map((x) => 'portal:' + x)); probs.small.push(...c.small.map((x) => 'portal:' + x));
@@ -487,8 +539,9 @@ async function contrast(browser) {
     const fails = new Map();
     await login(p, 'admin');
     await p.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
-    for (const r of ROUTES.adm.concat(['ficha', 'portal'])) {
-      await p.evaluate((h) => { location.hash = h; }, r); await p.waitForTimeout(80);
+    for (const r of ROUTES.adm.concat(['ficha', 'ficha-con', 'portal'])) {
+      await p.evaluate((h) => { location.hash = h; }, r === 'ficha-con' ? 'ficha' : r); await p.waitForTimeout(80);
+      if (r === 'ficha-con') { await p.click('[data-t="con"]'); if (await p.$('[data-a="conout"]')) await p.click('[data-a="conout"]'); await p.check('input[name="ck"][value="care"]'); }
       if (r === 'ficha') { await p.click('[data-t="esc"]'); await p.click('[data-k="phq"]'); await p.check('#phq-8-1'); }
       if (r === 'facturacion') await p.click('[data-a="bt"][data-v="planes"]');
       const res = await p.evaluate(() => {

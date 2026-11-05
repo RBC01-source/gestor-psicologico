@@ -1,6 +1,6 @@
 # Gestor Psicológico (demo)
 
-Demo navegable de un software de gestión para psicólogos y clínicas: login por roles, dashboard, CRM de pacientes, expediente clínico con pestañas, agenda, flujo de IA (audio → transcripción → resumen → SOAP → supervisor IA → seguimiento), radar clínico, seguimiento por WhatsApp, facturación, planes y equipo clínico. Incluye además una Biblioteca con enlaces a fuentes abiertas y documentos oficiales del Colegio de Psicólogos del Perú, escalas GAD-7 y PHQ-9 con puntaje automático y alerta del ítem 9, un portal del paciente con reserva de citas y un resumen del expediente para copiar.
+Demo navegable de un software de gestión para psicólogos y clínicas: login por roles, dashboard, CRM de pacientes, expediente clínico con pestañas, agenda, flujo de IA (audio → transcripción → resumen → SOAP → supervisor IA → seguimiento), radar clínico, seguimiento por WhatsApp, facturación, planes y equipo clínico. Incluye además una Biblioteca con enlaces a fuentes abiertas y documentos oficiales del Colegio de Psicólogos del Perú, escalas GAD-7 y PHQ-9 con puntaje automático y alerta del ítem 9, un portal del paciente con reserva de citas un resumen del expediente para copiar y el registro del consentimiento informado (casillas separadas para atención, audio, IA, mensajes y docencia; firma con nombre, versión del texto, retiro y bloqueo de sesiones sin autorización).
 
 Es un único archivo, `index.html`, sin dependencias ni paso de compilación. Ábrelo en el navegador.
 

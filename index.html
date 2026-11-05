@@ -169,6 +169,18 @@ details[open] summary::after{content:'−'}
 .sc2 .score{position:sticky;top:76px}
 .alert{border:1px solid var(--crit);background:var(--crit-soft);color:var(--crit);padding:12px;border-radius:10px;font-weight:600}
 .slots{display:flex;flex-wrap:wrap;gap:8px}
+.cons-text{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px 14px;font-size:13.5px;background:var(--surface);margin:12px 0}
+.cons-text p{margin:10px 0}
+.cons-text:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ckset{border:0;margin:0;padding:0;display:grid;gap:8px}
+.ckset legend{font-weight:600;margin-bottom:8px;padding:0}
+.ck{position:relative;display:flex;gap:12px;align-items:flex-start;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer}
+.ck input{position:absolute;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);margin:0;opacity:0;cursor:pointer}
+.ck .bx{flex:none;width:22px;height:22px;border:2px solid var(--muted);border-radius:6px;margin-top:1px;display:grid;place-items:center}
+.ck:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.ck:has(input:checked) .bx{background:var(--accent);border-color:var(--accent)}
+.ck:has(input:checked) .bx::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.ck:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:900px){.sc2{grid-template-columns:1fr}.sc2 .score{position:static}}
 @media (max-width:600px){.opts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
@@ -415,7 +427,7 @@ function routeDef(id){for(var i=0;i<R.length;i++)if(R[i].id===id)return R[i];ret
 function allowed(id){if(id==='ficha'||id==='portal')return true;var d=routeDef(id);return !!(d&&S.user&&d.ro.split(' ').indexOf(S.user.r)>-1)}
 
 /* ---------- estado ---------- */
-var S={user:null,pick:'carlos',route:'dashboard',pid:'PAC-0001',tab:'res',fil:'all',q:'',cal:{y:2026,m:10,d:5},fl:{st:'idle',n:0},wa:'ask',bill:{scope:'me',tab:'res'},cyc:'m',rad:'PAC-0001',chat:[],auto:{a:true,b:true,c:true,d:false,e:true},tour:{on:false,i:0},last:'',scl:'gad',ans:{},hist:{},extra:[],slot:null,booked:null,sum:null,sumPid:null};
+var S={user:null,pick:'carlos',route:'dashboard',pid:'PAC-0001',tab:'res',fil:'all',q:'',cal:{y:2026,m:10,d:5},fl:{st:'idle',n:0},wa:'ask',bill:{scope:'me',tab:'res'},cyc:'m',rad:'PAC-0001',chat:[],auto:{a:true,b:true,c:true,d:false,e:true},tour:{on:false,i:0},last:'',con:{},cf:{},cedit:null,scl:'gad',ans:{},hist:{},extra:[],slot:null,booked:null,sum:null,sumPid:null};
 var flowTimer=null,toastTimer=null;
 
 function vis(){return PT.filter(function(p){return S.user.sc==='all'||p.own===S.user.id})}
@@ -570,9 +582,9 @@ function patRows(){
 }
 V.ficha=function(){
   var p=curPat();if(!p)return '<div class="empty">No hay pacientes disponibles.</div>';
-  var tabs=[['res','Resumen'],['ses','Sesiones'],['soap','SOAP'],['esc','Escalas'],['doc','Documentos'],['ia','IA']];
+  var tabs=[['res','Resumen'],['ses','Sesiones'],['soap','SOAP'],['esc','Escalas'],['con','Consentimiento'],['doc','Documentos'],['ia','IA']];
   return '<div><button class="btn sm" data-a="go" data-r="pacientes">← Pacientes</button></div>'+
-   '<section class="card"><div class="pn" style="gap:16px;flex-wrap:wrap">'+avatar(p.n,'lg')+'<div style="flex:1;min-width:200px"><h1>'+esc(p.n)+'</h1><p class="muted mono small">'+p.id+' · '+p.age+' años · '+esc(p.tel)+'</p><div class="chips" style="margin-top:8px">'+estPill(p.est)+riskPill(p.rk)+'<span class="pill info">Próxima: '+nextTxt(p)+'</span></div></div>'+
+   '<section class="card"><div class="pn" style="gap:16px;flex-wrap:wrap">'+avatar(p.n,'lg')+'<div style="flex:1;min-width:200px"><h1>'+esc(p.n)+'</h1><p class="muted mono small">'+p.id+' · '+p.age+' años · '+esc(p.tel)+'</p><div class="chips" style="margin-top:8px">'+estPill(p.est)+riskPill(p.rk)+conPill(p)+'<span class="pill info">Próxima: '+nextTxt(p)+'</span></div></div>'+
    '<div class="chips"><button class="btn pri sm" data-a="go" data-r="sesiones">Nueva sesión</button><button class="btn sm" data-a="go" data-r="seguimiento">WhatsApp</button><button class="btn sm" data-a="go" data-r="portal">Vista del paciente</button><button class="btn sm" data-a="sum">Resumen para copiar</button></div></div></section>'+(S.sum&&S.sumPid===p.id?sumPanel():'')+
    '<div class="tabs" role="tablist" aria-label="Expediente">'+tabs.map(function(t){return '<button role="tab" data-a="tab" data-t="'+t[0]+'" aria-selected="'+(S.tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>'+
    '<div role="tabpanel">'+T[S.tab](p)+'</div>';
@@ -594,7 +606,7 @@ T.soap=function(p){
   return soapOf(p).map(function(s,i){return '<details'+(i===0?' open':'')+'><summary>Sesión '+pad(s.n)+' · '+s.d+'</summary><div class="soap">'+['S','O','A','P'].map(function(k){return '<div><b>'+k+'</b><p>'+esc(s[k])+'</p></div>'}).join('')+'<p class="ai-note">Generado con IA y revisado por '+OWN[p.own]+'.</p></div></details>'}).join('');
 };
 T.doc=function(p){
-  return '<div class="g2"><section class="card"><h2>Consentimiento informado</h2><div class="li"><div><b>Consentimiento_'+p.id+'.pdf</b><div class="small muted">Firmado el '+dateFmt(p.ini)+' 2026 · 184 KB</div></div><span class="pill good">Firmado</span></div></section>'+
+  return '<div class="g2"><section class="card"><h2>Consentimiento informado</h2>'+(conOf(p).st==='vigente'?'<div class="li"><div><b>Consentimiento_'+p.id+'_'+conOf(p).v+'.pdf</b><div class="small muted">Firmado el '+esc(conOf(p).d)+' · 184 KB</div></div><span class="pill good">Firmado</span></div>':'<div class="li"><div><b>Consentimiento informado</b><div class="small muted">'+(conOf(p).st==='retirado'?'Retirado por el paciente':'Aún no se ha registrado')+'</div></div>'+conPill(p)+'</div>')+'</section>'+
    '<section class="card"><h2>Evaluaciones</h2><div class="li"><div><b>GAD-7 (ansiedad)</b><div class="small muted">Inicio '+p.gad[0]+' ('+gadTxt(p.gad[0])+') → actual '+p.gad[1]+' ('+gadTxt(p.gad[1])+')</div></div><span class="pill mono">'+p.gad[1]+'/21</span></div><div class="li"><div><b>PHQ-9 (ánimo)</b><div class="small muted">Inicio '+p.phq[0]+' ('+phqTxt(p.phq[0])+') → actual '+p.phq[1]+' ('+phqTxt(p.phq[1])+')</div></div><span class="pill mono">'+p.phq[1]+'/27</span></div></section></div>'+
    '<section class="card"><h2>Adjuntos</h2><div class="list"><div class="li"><span>registro_pensamientos.pdf</span><span class="muted small">92 KB</span></div><div class="li"><span>sesion_'+pad(p.ses)+'_audio.mp3</span><span class="muted small">44 MB · cifrado</span></div><div class="li"><span>plan_terapeutico.pdf</span><span class="muted small">210 KB</span></div></div></section>';
 };
@@ -638,14 +650,17 @@ function drawFlow(){
   var el=$('#flowBody');if(!el)return;var f=S.fl;
   var st='<div class="steps" aria-label="Progreso">'+FS.map(function(s,i){var c=i<f.n?'done':(f.st==='run'&&i===f.n)?'act':'';return '<div class="stp '+c+'"><span class="n">'+(i<f.n?'✓':(c==='act'?'<span class="spin"></span>':i+1))+'</span><div><b>'+s[0]+'</b><span>'+s[1]+'</span></div></div>'}).join('')+'</div>';
   var out='';
-  if(f.st==='idle'){out='<div class="drop"><div class="file">ana_sesion_12.mp3</div>'+waveHtml()+'<div class="muted small">Sesión del 3 de noviembre · Ana Ramírez · 48 min</div><button class="btn pri" data-a="flowgo">Procesar con IA</button><p class="note">En esta demo el audio es de ejemplo. No se sube ningún archivo.</p></div>'}
+  if(f.st==='idle'){var cp=curPat();out='<div class="drop"><div class="file">'+noAcc(cp.n.split(' ')[0])+'_sesion_'+cp.ses+'.mp3</div>'+waveHtml()+'<div class="muted small">Sesión del '+dateFmt(cp.ult)+' · '+esc(cp.n)+' · 48 min</div><button class="btn pri" data-a="flowgo">Procesar con IA</button><p class="note">En esta demo el audio es de ejemplo. No se sube ningún archivo.</p></div>'}
   else{for(var i=0;i<f.n;i++)out+=flowCard(i);if(f.st==='run')out+='<div class="card"><div class="pn"><span class="spin"></span><span class="muted">'+FS[f.n][0]+'…</span></div></div>';
     if(f.st==='done')out+='<section class="card"><div class="ch"><div><h3>Listo en 2 min 14 s</h3><p class="muted small">Ahorro estimado: 38 minutos de redacción. Revisa la nota antes de firmarla.</p></div><div class="chips"><button class="btn pri" data-a="flowsave">Guardar en expediente</button><button class="btn" data-a="go" data-r="radar">Ver radar clínico</button><button class="btn" data-a="flowreset">Reiniciar demo</button></div></div></section>'}
   el.innerHTML='<div class="flow">'+st+'<div class="out">'+out+'</div></div>';
 }
-V.sesiones=function(){return '<div class="hd2"><div><h1>Sesiones</h1><p>Del audio a la nota SOAP y al seguimiento del paciente.</p></div></div><div id="flowBody"></div>'};
+V.sesiones=function(){
+  var p=curPat(),g=conGate(p),h='<div class="hd2"><div><h1>Sesiones</h1><p>Del audio a la nota SOAP y al seguimiento del paciente.</p></div></div>';
+  if(g==='ok')return h+'<div id="flowBody"></div>';
+  return h+'<section class="card" style="max-width:640px"><div class="pn" style="gap:12px">'+avatar(p.n)+'<div><b>'+esc(p.n)+'</b><div class="small muted">'+p.id+'</div></div></div><p class="pill warn" style="margin-top:14px" role="status">'+(g==='care'?'Falta el consentimiento informado de este paciente. No se puede crear una sesión.':'Este paciente no autorizó la grabación de audio o el uso de IA. No se puede procesar la sesión con IA.')+'</p><div class="chips" style="margin-top:14px"><button class="btn pri" data-a="concta">Ir a Consentimiento</button></div></section>'};
 function flowGo(){
-  if(flowTimer)return;S.fl={st:'run',n:0};drawFlow();
+  if(flowTimer||conGate(curPat())!=='ok')return;S.fl={st:'run',n:0};drawFlow();
   var fast=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   flowTimer=setInterval(function(){S.fl.n++;if(S.fl.n>=FS.length){S.fl.st='done';clearInterval(flowTimer);flowTimer=null}if(S.route==='sesiones')drawFlow();else if(S.fl.st==='done'){}},fast?120:1050);
 }
@@ -717,6 +732,46 @@ function summaryText(p){
   return ['EXPEDIENTE CLÍNICO (DEMO, DATOS SIMULADOS)','Paciente: '+p.n+' · '+p.id+' · '+p.age+' años','Motivo: '+p.mot,'Sesiones: '+p.ses+' · Inicio '+dateFmt(p.ini)+' 2026 · Última '+dateFmt(p.ult)+' 2026','Evolución: '+p.evo+' · Riesgo: '+p.rk,'GAD-7: '+p.gad[0]+' → '+p.gad[1]+' · PHQ-9: '+p.phq[0]+' → '+p.phq[1]].concat(h.map(function(x){return 'Registrado en la demo: '+x.k+' '+x.v+' ('+x.s+') '+x.d})).concat(['','Última nota SOAP (sesión '+s.n+', '+s.d+')','S: '+s.S,'O: '+s.O,'A: '+s.A,'P: '+s.P,'','Generado con IA y revisado por '+OWN[p.own]+'.']).join('\n');
 }
 function sumPanel(){return '<section class="card"><div class="ch"><h2>Resumen del expediente</h2><div class="chips"><button class="btn sm pri" data-a="copysum">Copiar</button><button class="btn sm" data-a="sumx">Cerrar</button></div></div><label class="sr" for="sumta">Resumen</label><textarea id="sumta" class="input" readonly rows="12" style="font:13px var(--f-mono);min-height:240px">'+esc(S.sum)+'</textarea><p class="note" style="margin-top:8px">Copia el texto para pegarlo en un documento. La descarga en PDF no está en la demo.</p></section>'}
+
+/* consentimiento informado */
+var CONV='v2.1',NOWTXT='05 nov 2026 · 10:12';
+var CITEMS=[['care','Atención psicológica y tratamiento de mis datos clínicos','Obligatorio para atenderme.'],['audio','Grabación de audio de las sesiones','Opcional.'],['ai','Uso de IA para transcribir y resumir','Opcional. Mi psicólogo/a siempre revisa el resultado.'],['msg','Mensajes por WhatsApp o correo','Opcional. Recordatorios y seguimiento.'],['teach','Uso anónimo de mi caso para docencia o supervisión','Opcional.']];
+var CMED=['En consulta','Enlace por WhatsApp o correo','Documento en papel escaneado'];
+function conOf(p){
+  var c=S.con[p.id];if(c)return c;
+  if(p.id==='PAC-0005')return {st:'pendiente'};
+  var it={care:true,audio:true,ai:true,msg:true,teach:false};
+  if(p.id==='PAC-0009'){it.audio=false;it.ai=false}
+  return {st:'vigente',v:'v2.1',d:dateFmt(p.ini)+' 2026',by:OWN[p.own],med:'En consulta',items:it,sig:p.n};
+}
+function conGate(p){var c=conOf(p);if(c.st!=='vigente'||!c.items.care)return 'care';if(!c.items.audio||!c.items.ai)return 'audio';return 'ok'}
+function conPill(p){var c=conOf(p);return c.st==='vigente'?'<span class="pill good">Consentimiento vigente</span>':c.st==='retirado'?'<span class="pill crit">Consentimiento retirado</span>':'<span class="pill warn">Consentimiento pendiente</span>'}
+function cfOf(p){if(!S.cf[p.id]){var c=conOf(p),it={};CITEMS.forEach(function(x){it[x[0]]=c.st==='vigente'?!!c.items[x[0]]:false});S.cf[p.id]={items:it,med:CMED[0],sig:''}}return S.cf[p.id]}
+function conOkSave(p){var f=cfOf(p);return !!f.items.care&&noAcc(f.sig).replace(/\s+/g,' ').trim()===noAcc(p.n)}
+function conForm(p){
+  var f=cfOf(p);
+  return '<section class="card"><h2>Registrar autorización</h2><p class="muted small">Lee el texto con el paciente, marca lo que autoriza y pídele que firme con su nombre completo.</p>'+
+   '<div class="cons-text" role="region" tabindex="0" aria-label="Texto del consentimiento informado, versión '+CONV+'"><p><b>Consentimiento informado ('+CONV+')</b></p><p>Autorizo que '+esc(OWN[p.own])+' y el equipo clínico de Centro Psicológico Renacer registren y traten mis datos de salud con el fin de brindarme atención psicológica, hacer su seguimiento y emitir la facturación correspondiente.</p><p>Entiendo que se registrarán notas de sesión y resultados de escalas, y que solo accederán las personas que participan en mi atención o su supervisión. Mis datos no se compartirán con terceros, salvo obligación legal.</p><p>Si autorizo el uso de IA, entiendo que el contenido de la sesión puede ser procesado para generar un resumen, y que un profesional lo revisa antes de incorporarlo a mi historia.</p><p>Puedo acceder a mis datos, corregirlos o pedir su eliminación, y retirar esta autorización en cualquier momento sin perder mi atención. La historia clínica se conserva el tiempo que exija la normativa.</p></div>'+
+   '<fieldset class="ckset"><legend>Autorizo</legend>'+CITEMS.map(function(x){return '<label class="ck"><input type="checkbox" name="ck" value="'+x[0]+'"'+(f.items[x[0]]?' checked':'')+'><span class="bx" aria-hidden="true"></span><span><b>'+x[1]+'</b><span class="small muted"> '+x[2]+'</span></span></label>'}).join('')+'</fieldset>'+
+   '<div class="g2" style="margin-top:14px"><div><label for="cmed" class="small muted">Cómo se obtuvo</label><select class="input" id="cmed">'+CMED.map(function(m){return '<option'+(f.med===m?' selected':'')+'>'+m+'</option>'}).join('')+'</select></div>'+
+   '<div><label for="csig" class="small muted">Firma: nombre completo del paciente</label><input class="input" id="csig" type="text" maxlength="80" autocomplete="off" placeholder="Nombre y apellidos" value="'+esc(f.sig)+'"></div></div>'+
+   '<div class="chips" style="margin-top:14px"><button class="btn pri" id="consave" data-a="consave"'+(conOkSave(p)?'':' disabled')+'>Registrar autorización</button>'+(S.cedit===p.id?'<button class="btn" data-a="concancel">Cancelar</button>':'')+'</div>'+
+   '<p class="note">Para firmar hay que marcar la primera casilla y escribir el nombre exacto del paciente. En la demo la firma es un nombre escrito y no se envía nada.</p></section>';
+}
+T.con=function(p){
+  var c=conOf(p),editing=c.st!=='vigente'||S.cedit===p.id,top='';
+  if(c.st==='vigente'){
+    top='<section class="card"><div class="ch"><h2>Estado de la autorización</h2><span class="pill good">Vigente</span></div><dl class="kv" style="margin:0"><div><dt>Texto aceptado</dt><dd class="mono">'+c.v+'</dd></div><div><dt>Fecha</dt><dd>'+esc(c.d)+'</dd></div><div><dt>Cómo se obtuvo</dt><dd>'+esc(c.med)+'</dd></div><div><dt>Registrado por</dt><dd>'+esc(c.by)+'</dd></div><div><dt>Firma</dt><dd>'+esc(c.sig)+'</dd></div></dl>'+
+     '<div class="list" style="margin-top:14px">'+CITEMS.map(function(x){return '<div class="li"><span>'+x[1]+'</span><span class="pill '+(c.items[x[0]]?'good':'')+'">'+(c.items[x[0]]?'Sí':'No')+'</span></div>'}).join('')+'</div>'+
+     (!c.items.audio||!c.items.ai?'<p class="pill warn" style="margin-top:12px" role="status">Sin autorización de audio o IA: las sesiones de este paciente no se pueden grabar ni procesar con IA.</p>':'')+
+     (editing?'':'<div class="chips" style="margin-top:14px"><button class="btn" data-a="conedit">Modificar autorizaciones</button><button class="btn" data-a="conout">Retirar consentimiento</button></div>')+'</section>';
+  }else if(c.st==='retirado'){
+    top='<section class="card"><div class="ch"><h2>Estado de la autorización</h2><span class="pill crit">Retirado</span></div><p>El paciente retiró su consentimiento el '+esc(c.d)+' (registrado por '+esc(c.by)+'). La grabación, la IA y la creación de nuevas sesiones están bloqueadas hasta registrar una nueva autorización.</p></section>';
+  }else{
+    top='<section class="card"><div class="ch"><h2>Estado de la autorización</h2><span class="pill warn">Pendiente</span></div><p>Todavía no hay un consentimiento firmado. No se pueden crear sesiones ni grabar audio hasta registrarlo.</p></section>';
+  }
+  return top+(editing?conForm(p):'');
+};
 
 /* portal del paciente */
 function mins(t){var a=t.split(':');return +a[0]*60+ +a[1]}
@@ -888,7 +943,7 @@ var A={
  role:function(e){S.pick=e.dataset.id;drawRoles()},
  forgot:function(e,ev){ev.preventDefault();toast('En la demo no hay recuperación de contraseña')},
  go:function(e){if(S.tour.on&&e.dataset.r!==S.route){}go(e.dataset.r)},
- pat:function(e){var p=byId(e.dataset.id);if(!canSee(p)){toast('No tienes acceso a este paciente');return}S.pid=p.id;S.tab='res';S.sum=null;S.slot=null;go('ficha')},
+ pat:function(e){var p=byId(e.dataset.id);if(!canSee(p)){toast('No tienes acceso a este paciente');return}S.pid=p.id;S.tab='res';S.sum=null;S.slot=null;S.cedit=null;go('ficha')},
  tab:function(e){S.tab=e.dataset.t;render()},
  fil:function(e){S.fil=e.dataset.f;render()},
  day:function(e){S.cal.d=+e.dataset.d;render()},
@@ -902,6 +957,11 @@ var A={
  bs:function(e){S.bill.scope=e.dataset.v;render()},
  bt:function(e){S.bill.tab=e.dataset.v;render()},
  cyc:function(e){S.cyc=e.dataset.v;render()},
+ conedit:function(){var p=curPat();delete S.cf[p.id];S.cedit=p.id;render()},
+ concancel:function(){var p=curPat();delete S.cf[p.id];S.cedit=null;render()},
+ conout:function(){var p=curPat();S.con[p.id]={st:'retirado',d:NOWTXT,by:S.user.n};delete S.cf[p.id];S.cedit=null;toast('Consentimiento retirado. Grabación e IA bloqueadas');render()},
+ consave:function(){var p=curPat();if(!conOkSave(p))return;var f=cfOf(p),it={};CITEMS.forEach(function(x){it[x[0]]=!!f.items[x[0]]});S.con[p.id]={st:'vigente',v:CONV,d:NOWTXT,by:S.user.n,med:f.med,items:it,sig:f.sig.trim()};delete S.cf[p.id];S.cedit=null;toast('Autorización registrada');render()},
+ concta:function(){S.pid=curPat().id;S.tab='con';go('ficha')},
  demo:function(e){toast(e.dataset.m)},
  theme:function(){var h=document.documentElement,dark=h.getAttribute('data-theme')==='dark'||(!h.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);h.setAttribute('data-theme',dark?'light':'dark');render()},
  menu:function(){$('#side').classList.toggle('open');$('#scrim').classList.toggle('on')},
@@ -926,10 +986,12 @@ document.addEventListener('keydown',function(ev){
   if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches&&ev.target.matches('tr.clk')){ev.preventDefault();A.pat(ev.target)}
   if(ev.key==='Escape')closeMenu();
 });
-document.addEventListener('input',function(ev){if(ev.target.id==='q'){S.q=ev.target.value.slice(0,60);patRows()}if(ev.target.id==='bq'){S.bq=ev.target.value.slice(0,60);bibList()}});
+document.addEventListener('input',function(ev){if(ev.target.id==='csig'){var p0=curPat();cfOf(p0).sig=ev.target.value.slice(0,80);var b0=$('#consave');if(b0)b0.disabled=!conOkSave(p0)}if(ev.target.id==='q'){S.q=ev.target.value.slice(0,60);patRows()}if(ev.target.id==='bq'){S.bq=ev.target.value.slice(0,60);bibList()}});
 document.addEventListener('change',function(ev){
   var t=ev.target;
   if(t.id==='rsel'){S.rad=t.value;render()}
+  if(t.type==='checkbox'&&t.name==='ck'){var p1=curPat();cfOf(p1).items[t.value]=t.checked;var b1=$('#consave');if(b1)b1.disabled=!conOkSave(p1)}
+  if(t.id==='cmed'){cfOf(curPat()).med=t.value}
   if(t.type==='radio'&&/^(gad|phq)-\d+$/.test(t.name)){var m=t.name.split('-'),p=curPat();ansOf(p.id)[m[0]][+m[1]]=+t.value;var b=$('#scoreBox');if(b)b.innerHTML=scoreBox(p)}
 });
 $('#lf').addEventListener('submit',function(ev){ev.preventDefault();doLogin()});
