@@ -56,7 +56,7 @@ async function functional(browser) {
   // Roles y menú
   await login(p, 'carlos');
   let nav = await navLabels(p);
-  ok(nav.length === 9 && !nav.includes('Equipo Clínico') && nav.includes('Facturación'), 'Psicólogo: ve Facturación y no Equipo Clínico');
+  ok(nav.length === 10 && !nav.includes('Equipo Clínico') && nav.includes('Facturación'), 'Psicólogo: ve Facturación y no Equipo Clínico');
   const heading = await txt(p, '#view h1');
   ok(/Buenos días, Dr\. Carlos/.test(heading), 'Saludo con el nombre del usuario');
   const kp = await p.$$eval('.kpi', (k) => k.map((x) => x.innerText.replace(/\s+/g, ' ')));
@@ -117,6 +117,22 @@ async function functional(browser) {
   await go(p, 'sesiones');
   ok(await p.isVisible('[data-a="flowsave"]'), 'Al volver a Sesiones se conserva el resultado');
 
+  // Biblioteca
+  await go(p, 'biblioteca');
+  ok((await p.$$('#bib > div')).length === 14, 'Biblioteca: 14 especialidades');
+  const enl = await p.$$eval('#bib a.lk', (a) => a.map((x) => ({ h: x.href, t: x.target, r: x.rel })));
+  ok(enl.length === 42 && enl.every((e) => e.h.startsWith('https://') && e.t === '_blank' && /noopener/.test(e.r) && /noreferrer/.test(e.r)), 'Biblioteca: 42 enlaces (3 por especialidad), todos https, en pestaña nueva y con noopener/noreferrer');
+  ok((await p.$$eval('#bib a.lk', (a) => a.filter((x) => /search\.scielo\.org/.test(x.href) && /q=psicolog%C3%ADa/.test(x.href)).length)) === 14, 'Biblioteca: la búsqueda de SciELO usa el término de cada especialidad');
+  ok((await p.$$eval('#view section.card:nth-of-type(2) a.lk', (a) => a.length)) === 6, 'Biblioteca: 6 documentos oficiales del Colegio');
+  await p.fill('#bq', 'deporte');
+  ok((await p.$$('#bib > div')).length === 1, 'Biblioteca: buscar "deporte" deja 1 especialidad');
+  await p.fill('#bq', 'PENITENCIARIA');
+  ok((await p.$$('#bib > div')).length === 1, 'Biblioteca: la búsqueda ignora mayúsculas');
+  await p.fill('#bq', 'zzz');
+  ok((await txt(p, '#bib')).includes('Ninguna especialidad'), 'Biblioteca: sin resultados muestra mensaje');
+  await p.fill('#bq', '<img src=x onerror="window.__xss=7">');
+  ok(await p.evaluate(() => window.__xss === undefined && !document.querySelector('#bib img')), 'Biblioteca: la búsqueda no ejecuta HTML');
+
   // IA clínica
   await go(p, 'ia');
   await p.click('[data-q="0"]');
@@ -175,7 +191,7 @@ async function functional(browser) {
   await p.click('#outb');
   await login(p, 'admin');
   nav = await navLabels(p);
-  ok(nav.length === 10, 'Administrador ve los 10 módulos');
+  ok(nav.length === 11, 'Administrador ve los 11 módulos');
   await go(p, 'facturacion');
   await p.click('[data-a="bs"][data-v="clinic"]');
   ok((await txt(p, 'main')).includes('US$ 24,380'), 'Admin: facturación de clínica completa US$ 24,380');
@@ -198,7 +214,7 @@ async function security(browser) {
   ok(!/\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/.test(src), 'El código no hace peticiones de red');
   ok(!/localStorage|sessionStorage|indexedDB|document\.cookie/.test(src), 'No guarda nada en el navegador');
   ok(!/href="javascript:/i.test(src), 'Sin enlaces javascript:');
-  ok((src.match(/https?:\/\/[^\s"')]+/g) || []).every((u) => /fonts\.(googleapis|gstatic)\.com|www\.w3\.org/.test(u)), 'Los únicos recursos externos son fuentes de Google');
+  ok((src.match(/https?:\/\/[^\s"')]+/g) || []).every((u) => /fonts\.(googleapis|gstatic)\.com|www\.w3\.org|^https:\/\/(www\.)?(cpsp\.pe|cpsplimaycallao\.org\.pe|search\.scielo\.org|redalyc\.org|alicia\.concytec\.gob\.pe)/.test(u)), 'Los únicos recursos externos son fuentes de Google y enlaces a la Biblioteca (https, dominios esperados)');
   ok(/type="password"[^>]*autocomplete="off"|autocomplete="off"[^>]*type="password"/.test(src), 'El campo de contraseña es type=password');
 
   const p = await newPage(browser, { viewport: { width: 1280, height: 860 } });
@@ -263,7 +279,7 @@ async function security(browser) {
 }
 
 /* ============ 3. USABILIDAD (usuario simulado) ============ */
-const ROUTES = { psi: ['dashboard', 'pacientes', 'agenda', 'sesiones', 'ia', 'radar', 'seguimiento', 'facturacion', 'config'], adm: ['dashboard', 'pacientes', 'agenda', 'sesiones', 'ia', 'radar', 'seguimiento', 'facturacion', 'equipo', 'config'] };
+const ROUTES = { psi: ['dashboard', 'pacientes', 'agenda', 'sesiones', 'ia', 'biblioteca', 'radar', 'seguimiento', 'facturacion', 'config'], adm: ['dashboard', 'pacientes', 'agenda', 'sesiones', 'ia', 'biblioteca', 'radar', 'seguimiento', 'facturacion', 'equipo', 'config'] };
 
 async function clickability(page, label, minH) {
   return page.evaluate(({ minH }) => {

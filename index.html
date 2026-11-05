@@ -149,6 +149,15 @@ details[open] summary::after{content:'−'}
 .soap b{width:26px;height:26px;border-radius:7px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:600 13px var(--f-mono)}
 .empty{padding:28px;text-align:center;color:var(--muted)}
 
+.lk{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:6px 2px;color:var(--accent);font-weight:600;text-decoration:none;border-top:1px solid var(--line)}
+.lk::after{content:'↗';font-weight:500;color:var(--muted)}
+.lk:hover{text-decoration:underline}
+.bib{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));margin-top:14px}
+.bib>div{border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--surface2);display:grid;gap:4px;align-content:start}
+.bib h3{display:flex;gap:10px;align-items:flex-start;margin-bottom:6px}
+.cap{flex:none;display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:7px;background:var(--accent-soft);color:var(--accent);font:600 12.5px var(--f-mono)}
+.nl{margin:0;padding-left:18px;display:grid;gap:6px}
+
 /* charts */
 .chart{width:100%;height:auto;display:block}
 .chart .grid{stroke:var(--line);stroke-width:1}
@@ -338,6 +347,7 @@ chat:'<path d="M4 5.5h16v10.5H9.5L5 20v-4H4z"/>',
 card:'<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h4"/>',
 person:'<circle cx="12" cy="7.5" r="3.5"/><path d="M5 20c.6-4 3.4-6 7-6s6.4 2 7 6"/>',
 gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/>',
+book:'<path d="M5 4.5h10.5A2.5 2.5 0 0 1 18 7v13H7.5A2.5 2.5 0 0 1 5 17.5z"/><path d="M5 17.5A2.5 2.5 0 0 1 7.5 15H18"/>',
 menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
 moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
 sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8"/>'
@@ -381,6 +391,7 @@ var R=[
  {id:'agenda',l:'Agenda',i:'cal',ro:'psi sup adm'},
  {id:'sesiones',l:'Sesiones',i:'mic',ro:'psi sup adm'},
  {id:'ia',l:'IA Clínica',i:'spark',ro:'psi sup adm'},
+ {id:'biblioteca',l:'Biblioteca',i:'book',ro:'psi sup adm'},
  {id:'radar',l:'Radar Clínico',i:'radar',ro:'psi sup adm'},
  {id:'seguimiento',l:'Seguimiento',i:'chat',ro:'psi sup adm'},
  {id:'facturacion',l:'Facturación',i:'card',ro:'psi adm'},
@@ -643,6 +654,26 @@ function askAI(i){
   S.chat=[{q:q,a:a}].concat(S.chat).slice(0,3);var c=$('#chat');if(c)c.innerHTML=chatHtml();
 }
 
+
+/* biblioteca */
+var CHAP=[['A','Psicología Clínica y de la Salud','psicología clínica salud'],['B','Psicología Jurídica','psicología jurídica forense'],['C','Psicología Organizacional','psicología organizacional'],['D','Psicología Educacional','psicología educativa'],['E','Psicología Policial–Militar','psicología policial militar'],['F','Psicología del Deporte','psicología del deporte'],['G','Psicología Social–Comunitaria','psicología comunitaria'],['H','Psicología del Adulto Mayor','psicología adulto mayor'],['I','Psicología de las Emergencias y Desastres','psicología emergencias desastres'],['J','Psicología de la Familia','psicología de la familia'],['K','Psicología de las Adicciones','psicología adicciones'],['L','Psicología Ambiental','psicología ambiental'],['M','Psicología Política','psicología política'],['M','Psicología Penitenciaria','psicología penitenciaria']];
+var OFI=[['Marco normativo del Colegio de Psicólogos del Perú','https://cpsp.pe/index.php?option=com_sppagebuilder&view=page&id=7&Itemid=153'],['Resoluciones del Consejo Directivo Nacional','https://cpsp.pe/index.php?option=com_sppagebuilder&view=page&id=35&Itemid=154'],['Estatuto nacional del CPsP (PDF)','https://www.cpsp.pe/images/documentos/marco_legal/CPsP_CDN_estatuto_nacional.pdf'],['Revista del CPsP «La Nacional»','https://cpsp.pe/index.php?option=com_sppagebuilder&view=page&id=38&Itemid=133'],['Segunda especialidad: capítulos profesionales y trámite','https://cpsp.pe/?Itemid=170&id=27&option=com_sppagebuilder&view=page'],['Ley del trabajo del psicólogo (PDF, CPsP Lima y Callao)','https://cpsplimaycallao.org.pe/wp-content/uploads/2023/10/Ley-del-Psicologo-PS-Jenny-Junco.pdf']];
+function lk(h,t){return '<a class="lk" href="'+esc(h)+'" target="_blank" rel="noopener noreferrer"><span>'+esc(t)+'</span><span class="sr"> (se abre en una pestaña nueva)</span></a>'}
+function bibLinks(q){var e=encodeURIComponent(q);return [['SciELO Perú','https://search.scielo.org/?q='+e+'&lang=es&filter%5Bin%5D%5B%5D=per'],['Redalyc','https://www.redalyc.org/busquedaArticuloFiltros.oa?q='+e],['ALICIA · repositorios científicos del Perú','https://alicia.concytec.gob.pe/vufind/Search/Results?lookfor='+e+'&type=AllFields']]}
+var noAcc=function(t){return t.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()};
+V.biblioteca=function(){
+  return '<div class="hd2"><div><h1>Biblioteca</h1><p>Material de consulta abierto para las especialidades del Colegio de Psicólogos del Perú.</p></div></div>'+
+   '<section class="card"><h2>Antes de usar los enlaces</h2><ul class="nl"><li>Los enlaces por especialidad abren búsquedas en SciELO, Redalyc y ALICIA, que son repositorios de acceso abierto. Cada documento tiene su propia licencia: revísala antes de reutilizarlo.</li><li>El Colegio no publica una lista de bibliografía «permitida». Estos enlaces son una selección de fuentes abiertas y no una aprobación oficial.</li><li>La web del Colegio muestra 13 capítulos de especialidad. Aquí «Política» y «Penitenciaria», que comparten el capítulo M, aparecen por separado para llegar a 14.</li></ul></section>'+
+   '<section class="card"><h2>Documentos oficiales del Colegio</h2><div class="list">'+OFI.map(function(o){return lk(o[1],o[0])}).join('')+'</div></section>'+
+   '<section class="card"><div class="ch"><h2>Especialidades</h2><span class="pill" id="bcount"></span></div><label class="sr" for="bq">Buscar especialidad</label><input class="input" id="bq" type="search" placeholder="Buscar especialidad" maxlength="60" autocomplete="off" value="'+esc(S.bq||'')+'"><div id="bib" class="bib"></div></section>';
+};
+function bibList(){
+  var q=noAcc(S.bq||'').trim(),rows=CHAP.filter(function(c){return !q||noAcc(c[1]).indexOf(q)>-1});
+  var el=$('#bib');if(!el)return;
+  $('#bcount').textContent=rows.length+' de '+CHAP.length;
+  el.innerHTML=rows.length?rows.map(function(c){return '<div><h3><span class="cap" title="Capítulo '+c[0]+'">'+c[0]+'</span>'+esc(c[1])+'</h3>'+bibLinks(c[2]).map(function(l){return lk(l[1],l[0])}).join('')+'</div>'}).join(''):'<div class="empty">Ninguna especialidad coincide con la búsqueda.</div>';
+}
+
 /* radar */
 V.radar=function(){
   var v=vis(),p=byId(S.rad);if(!canSee(p))p=v[0];S.rad=p.id;
@@ -724,6 +755,7 @@ function render(){
   $('#view').innerHTML=ok?V[r]():V.locked();
   if(ok&&r==='pacientes')patRows();
   if(ok&&r==='sesiones')drawFlow();
+  if(ok&&r==='biblioteca')bibList();
   if(S.last!==r){window.scrollTo(0,0);S.last=r}
   closeMenu();drawTour();
 }
@@ -820,7 +852,7 @@ document.addEventListener('keydown',function(ev){
   if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches&&ev.target.matches('tr.clk')){ev.preventDefault();A.pat(ev.target)}
   if(ev.key==='Escape')closeMenu();
 });
-document.addEventListener('input',function(ev){if(ev.target.id==='q'){S.q=ev.target.value.slice(0,60);patRows()}});
+document.addEventListener('input',function(ev){if(ev.target.id==='q'){S.q=ev.target.value.slice(0,60);patRows()}if(ev.target.id==='bq'){S.bq=ev.target.value.slice(0,60);bibList()}});
 document.addEventListener('change',function(ev){if(ev.target.id==='rsel'){S.rad=ev.target.value;render()}});
 $('#lf').addEventListener('submit',function(ev){ev.preventDefault();doLogin()});
 drawRoles();render();
