@@ -266,6 +266,13 @@ details[open] summary::after{content:'−'}
 .plan ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .plan li::before{content:'✓';color:var(--good);font-weight:700;margin-right:8px}
 .plan .btn{margin-top:auto}
+.plan .tag{font-size:13.5px;color:var(--muted);margin:-6px 0 0}
+.cmp td,.cmp th{text-align:center}.cmp td:first-child,.cmp th:first-child{text-align:left}
+.cmp td{padding:10px;border-bottom:1px solid var(--line);font-size:14px}
+.cmp .yes{color:var(--good);font-weight:700}
+.meter{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:8px}.meter i{display:block;height:100%;background:var(--accent)}
+.pmodal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);overflow:auto;padding:max(16px,env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.pm-in{background:var(--bg);color:var(--ink);max-width:980px;margin:0 auto;border-radius:16px;padding:20px;display:grid;gap:16px}
 
 /* toast + tour */
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:13.5px;z-index:80;max-width:calc(100vw - 32px);box-shadow:0 6px 24px rgba(0,0,0,.25)}
@@ -323,6 +330,7 @@ details[open] summary::after{content:'−'}
       <div><label class="lb" for="pw">Contraseña</label><input class="input" id="pw" type="password" autocomplete="off" maxlength="40" value="demo-sin-clave"></div>
       <div id="lerr" class="small" role="alert" style="color:var(--crit)" hidden></div>
       <button class="btn pri" type="submit" id="lgo">Iniciar sesión</button>
+      <button class="btn" type="button" data-a="pbopen">Ver planes y precios</button>
       <p class="note"><a href="#" data-a="forgot">¿Olvidó su contraseña?</a><br>Esta demo no valida contraseñas, no guarda datos y no envía nada a ningún servidor.</p>
     </form>
   </section>
@@ -350,6 +358,7 @@ details[open] summary::after{content:'−'}
   </div>
 </div>
 <div id="tourbox" class="tour" hidden role="dialog" aria-label="Recorrido guiado"></div>
+<div id="plansbox" class="pmodal" hidden role="dialog" aria-modal="true" aria-labelledby="pbt"></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -423,13 +432,14 @@ var R=[
  {id:'radar',l:'Radar Clínico',i:'radar',ro:'psi sup adm'},
  {id:'seguimiento',l:'Seguimiento',i:'chat',ro:'psi sup adm'},
  {id:'facturacion',l:'Facturación',i:'card',ro:'psi adm'},
+ {id:'planes',l:'Planes y precios',i:'spark',ro:'psi sup adm'},
  {id:'equipo',l:'Equipo Clínico',i:'person',ro:'sup adm'},
  {id:'config',l:'Configuración',i:'gear',ro:'psi sup adm'}];
 function routeDef(id){for(var i=0;i<R.length;i++)if(R[i].id===id)return R[i];return null}
 function allowed(id){if(id==='ficha'||id==='portal')return true;var d=routeDef(id);return !!(d&&S.user&&d.ro.split(' ').indexOf(S.user.r)>-1)}
 
 /* ---------- estado ---------- */
-var S={user:null,pick:'carlos',route:'dashboard',pid:'PAC-0001',tab:'res',fil:'all',q:'',cal:{y:2026,m:10,d:5},fl:{st:'idle',n:0},wa:'ask',bill:{scope:'me',tab:'res'},cyc:'m',rad:'PAC-0001',chat:[],auto:{a:true,b:true,c:true,d:false,e:true},tour:{on:false,i:0},last:'',plan:'clinica',con:{},cf:{},cedit:null,scl:'gad',ans:{},hist:{},extra:[],slot:null,booked:null,sum:null,sumPid:null};
+var S={user:null,pick:'carlos',route:'dashboard',pid:'PAC-0001',tab:'res',fil:'all',q:'',cal:{y:2026,m:10,d:5},fl:{st:'idle',n:0},wa:'ask',bill:{scope:'me',tab:'res'},cyc:'m',rad:'PAC-0001',chat:[],auto:{a:true,b:true,c:true,d:false,e:true},tour:{on:false,i:0},last:'',plan:'clinica',con:{},cf:{},cedit:null,scl:'gad',ans:{},hist:{},extra:[],slot:null,booked:null,sum:null,sumPid:null,pbox:false};
 var flowTimer=null,toastTimer=null;
 
 function vis(){return PT.filter(function(p){return S.user.sc==='all'||p.own===S.user.id})}
@@ -861,8 +871,54 @@ function planBadge(m){return '<span class="pb"><svg viewBox="0 0 24 24" width="1
 function upsell(k,full){
   var m=routeNeed(k)||tabNeed(k),adm=S.user.r==='adm',g=GAIN[k]||[];
   return '<section class="card" style="max-width:640px"><div class="ch"><h2>Disponible en el plan '+PNAME[m]+'</h2>'+planBadge(m)+'</div><p class="muted">Tu plan actual es <b>'+PNAME[S.plan]+'</b>. Con '+PNAME[m]+' ganas:</p><ul class="up">'+g.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul><div class="chips" style="margin-top:14px">'+
-   (adm?'<button class="btn pri" data-a="setplan" data-p="'+m+'">Mejorar a '+PNAME[m]+'</button><button class="btn" data-a="plans">Ver planes</button>':'<button class="btn pri" data-a="demo" data-m="Solicitud enviada al administrador (simulada)">Pedir al administrador</button>')+
+   (adm?'<button class="btn pri" data-a="setplan" data-p="'+m+'">Mejorar a '+PNAME[m]+'</button><button class="btn" data-a="plans">Ver planes</button>':'<button class="btn pri" data-a="demo" data-m="Solicitud enviada al administrador (simulada)">Pedir al administrador</button><button class="btn" data-a="go" data-r="planes">Ver planes y precios</button>')+
    (full?'<button class="btn" data-a="go" data-r="dashboard">Volver al dashboard</button>':'')+'</div><p class="note">Demo: el cambio de plan es simulado y no se cobra nada.</p></section>';
+}
+
+/* comparador de planes (lo ven todos los perfiles; solo el administrador cambia el plan) */
+var PTAG={basic:'Para ordenar tu consulta',pro:'Para ahorrar tiempo con IA',clinica:'Para equipos y clínicas'};
+var PLIM={basic:50,pro:150,clinica:0};
+var PFEAT=[
+ ['Pacientes activos','Hasta 50','Hasta 150','Sin límite'],
+ ['Profesionales','1','1','Hasta 10'],
+ ['Pacientes, expediente y agenda',1,1,1],
+ ['Escalas GAD-7 y PHQ-9',1,1,1],
+ ['Consentimiento informado',1,1,1],
+ ['Biblioteca y portal del paciente con reserva',1,1,1],
+ ['Sesiones: audio, transcripción y resumen',0,1,1],
+ ['Nota SOAP automática',0,1,1],
+ ['IA Clínica',0,1,1],
+ ['Seguimiento por WhatsApp',0,1,1],
+ ['Radar Clínico',0,0,1],
+ ['Equipo Clínico y reportes',0,0,1]];
+function pcell(v){return v===1?'<span class="yes" aria-hidden="true">✓</span><span class="sr">Incluido</span>':v===0?'<span aria-hidden="true">—</span><span class="sr">No incluido</span>':esc(v)}
+function usageBox(){
+  if(!S.user)return '';
+  var l=PLIM[S.plan],used=S.plan==='clinica'?243:38;
+  if(!l)return '<section class="card"><h2>Uso de tu plan</h2><p class="muted">Pacientes activos: <b>'+used+'</b> · Tu plan Clínica no tiene límite de pacientes.</p></section>';
+  var pc=Math.round(used*100/l);
+  return '<section class="card"><h2>Uso de tu plan</h2><p class="muted">Pacientes activos: <b>'+used+' de '+l+'</b> ('+pc+'%) · Plan '+PNAME[S.plan]+'</p><div class="meter" role="progressbar" aria-label="Pacientes activos: '+used+' de '+l+'" aria-valuemin="0" aria-valuemax="'+l+'" aria-valuenow="'+used+'"><i style="width:'+pc+'%"></i></div></section>';
+}
+function planCompare(){
+  var an=S.cyc==='y',adm=S.user&&S.user.r==='adm',K=['basic','pro','clinica'],PR={basic:19,pro:49,clinica:99};
+  var cards=K.map(function(k){
+    var cur=!!S.user&&k===S.plan,up=!!S.user&&PRANK[k]>PRANK[S.plan];
+    var btn=cur?'<button class="btn" disabled>Plan actual</button>':adm?'<button class="btn'+(up?' pri':'')+'" data-a="setplan" data-p="'+k+'">'+(up?'Mejorar a ':'Cambiar a ')+PNAME[k]+'</button>':'<button class="btn'+(k==='pro'?' pri':'')+'" data-a="demo" data-m="En la versión real aquí se abre el pago (simulado)">Quiero este plan<span class="sr"> '+PNAME[k]+'</span></button>';
+    return '<section class="card plan'+(cur?' cur':'')+'"><div class="ch"><h2>'+PNAME[k]+'</h2>'+(cur?'<span class="pill good">Plan actual</span>':'')+'</div><p class="tag">'+PTAG[k]+'</p><div class="pr">US$'+(an?Math.round(PR[k]*.8):PR[k])+'<span class="muted small" style="font:500 13px var(--f-body)"> /mes</span></div>'+btn+'</section>';
+  }).join('');
+  var rows=PFEAT.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+pcell(r[1])+'</td><td>'+pcell(r[2])+'</td><td>'+pcell(r[3])+'</td></tr>'}).join('');
+  return '<div class="chips"><button class="chip" data-a="cyc" data-v="m" aria-pressed="'+!an+'">Mensual</button><button class="chip" data-a="cyc" data-v="y" aria-pressed="'+an+'">Anual (−20%)</button></div>'+
+   '<div class="g3">'+cards+'</div>'+usageBox()+
+   '<section class="card" style="padding:6px 8px"><div class="tw"><table class="cmp"><caption class="sr">Comparación de los planes Basic, Pro y Clínica</caption><thead><tr><th scope="col">Qué incluye</th><th scope="col">Basic</th><th scope="col">Pro</th><th scope="col">Clínica</th></tr></thead><tbody>'+rows+'</tbody></table></div></section>'+
+   '<p class="note">Demo: los precios y límites son de ejemplo y no se cobra nada. '+(adm?'Como administrador puedes cambiar el plan para ver qué módulos se bloquean.':'El cambio de plan lo hace el administrador de la cuenta.')+'</p>';
+}
+V.planes=function(){return '<div class="hd2"><div><h1>Planes y precios</h1><p>Compara qué incluye cada plan.</p></div></div>'+planCompare()};
+var pbPrev=null;
+function drawPlansBox(){
+  var b=$('#plansbox');if(!b)return;
+  if(!S.pbox){b.hidden=true;b.innerHTML='';return}
+  b.innerHTML='<div class="pm-in"><div class="ch"><h2 id="pbt" style="font-size:22px">Planes y precios</h2><button class="btn sm" data-a="pbclose" id="pbx">Cerrar</button></div>'+planCompare()+'</div>';
+  b.hidden=false;
 }
 
 /* equipo */
@@ -902,7 +958,7 @@ function render(){
   if(ok&&r==='sesiones'&&!routeNeed(r))drawFlow();
   if(ok&&r==='biblioteca')bibList();
   if(S.last!==r){window.scrollTo(0,0);S.last=r}
-  closeMenu();drawTour();
+  closeMenu();drawTour();drawPlansBox();
 }
 function flowStopIfIdle(){}
 function closeMenu(){$('#side').classList.remove('open');$('#scrim').classList.remove('on')}
@@ -956,7 +1012,7 @@ function doLogin(){
   render();$('#view').focus({preventScroll:true});
 }
 function logout(){
-  flowStop();S.user=null;S.tour.on=false;$('#tourbox').hidden=true;
+  flowStop();S.user=null;S.pbox=false;S.tour.on=false;$('#tourbox').hidden=true;
   history.replaceState(null,'',location.pathname+location.search);
   render();drawRoles();$('#lgo').focus();
 }
@@ -988,6 +1044,8 @@ var A={
  consave:function(){var p=curPat();if(!conOkSave(p))return;var f=cfOf(p),it={};CITEMS.forEach(function(x){it[x[0]]=!!f.items[x[0]]});S.con[p.id]={st:'vigente',v:CONV,d:NOWTXT,by:S.user.n,med:f.med,items:it,sig:f.sig.trim()};delete S.cf[p.id];S.cedit=null;toast('Autorización registrada');render()},
  concta:function(){S.pid=curPat().id;S.tab='con';go('ficha')},
  demo:function(e){toast(e.dataset.m)},
+ pbopen:function(){pbPrev=document.activeElement;S.pbox=true;drawPlansBox();var x=$('#pbx');if(x)x.focus()},
+ pbclose:function(){S.pbox=false;drawPlansBox();if(pbPrev&&pbPrev.focus&&document.contains(pbPrev))pbPrev.focus();pbPrev=null},
  theme:function(){var h=document.documentElement,dark=h.getAttribute('data-theme')==='dark'||(!h.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);h.setAttribute('data-theme',dark?'light':'dark');render()},
  menu:function(){$('#side').classList.toggle('open');$('#scrim').classList.toggle('on')},
  logout:function(){logout()},
@@ -1009,7 +1067,7 @@ document.addEventListener('click',function(ev){
 });
 document.addEventListener('keydown',function(ev){
   if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches&&ev.target.matches('tr.clk')){ev.preventDefault();A.pat(ev.target)}
-  if(ev.key==='Escape')closeMenu();
+  if(ev.key==='Escape'){closeMenu();if(S.pbox)A.pbclose()}
 });
 document.addEventListener('input',function(ev){if(ev.target.id==='csig'){var p0=curPat();cfOf(p0).sig=ev.target.value.slice(0,80);var b0=$('#consave');if(b0)b0.disabled=!conOkSave(p0)}if(ev.target.id==='q'){S.q=ev.target.value.slice(0,60);patRows()}if(ev.target.id==='bq'){S.bq=ev.target.value.slice(0,60);bibList()}});
 document.addEventListener('change',function(ev){
@@ -1024,4 +1082,3 @@ drawRoles();render();
 })();
 </script>
 </body></html>
-<!-- build 2026-11-06 -->
