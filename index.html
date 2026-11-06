@@ -87,6 +87,9 @@ label.lb{display:block;font-weight:600;font-size:13px;margin:0 0 6px}
 .side .logo{color:#fff;padding:2px 6px}
 .nav{display:grid;gap:2px}
 .nav button{display:flex;align-items:center;gap:11px;width:100%;min-height:42px;padding:8px 11px;border:0;border-radius:9px;background:none;color:inherit;text-align:left;font-weight:500}
+.pb{display:inline-flex;align-items:center;gap:4px;margin-left:auto;font-size:11px;font-weight:600;line-height:1;padding:4px 8px;border-radius:99px;background:rgba(255,255,255,.14);white-space:nowrap}
+.tabs .pb,.ch .pb{margin-left:8px;background:var(--accent-soft);color:var(--accent)}
+.up{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
 .nav button:hover{background:rgba(255,255,255,.06)}
 .nav button[aria-current="page"]{background:var(--side-active);color:#fff}
 .side .foot{margin-top:auto;display:grid;gap:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:12px}
@@ -426,7 +429,7 @@ function routeDef(id){for(var i=0;i<R.length;i++)if(R[i].id===id)return R[i];ret
 function allowed(id){if(id==='ficha'||id==='portal')return true;var d=routeDef(id);return !!(d&&S.user&&d.ro.split(' ').indexOf(S.user.r)>-1)}
 
 /* ---------- estado ---------- */
-var S={user:null,pick:'carlos',route:'dashboard',pid:'PAC-0001',tab:'res',fil:'all',q:'',cal:{y:2026,m:10,d:5},fl:{st:'idle',n:0},wa:'ask',bill:{scope:'me',tab:'res'},cyc:'m',rad:'PAC-0001',chat:[],auto:{a:true,b:true,c:true,d:false,e:true},tour:{on:false,i:0},last:'',con:{},cf:{},cedit:null,scl:'gad',ans:{},hist:{},extra:[],slot:null,booked:null,sum:null,sumPid:null};
+var S={user:null,pick:'carlos',route:'dashboard',pid:'PAC-0001',tab:'res',fil:'all',q:'',cal:{y:2026,m:10,d:5},fl:{st:'idle',n:0},wa:'ask',bill:{scope:'me',tab:'res'},cyc:'m',rad:'PAC-0001',chat:[],auto:{a:true,b:true,c:true,d:false,e:true},tour:{on:false,i:0},last:'',plan:'clinica',con:{},cf:{},cedit:null,scl:'gad',ans:{},hist:{},extra:[],slot:null,booked:null,sum:null,sumPid:null};
 var flowTimer=null,toastTimer=null;
 
 function vis(){return PT.filter(function(p){return S.user.sc==='all'||p.own===S.user.id})}
@@ -585,8 +588,8 @@ V.ficha=function(){
   return '<div><button class="btn sm" data-a="go" data-r="pacientes">← Pacientes</button></div>'+
    '<section class="card"><div class="pn" style="gap:16px;flex-wrap:wrap">'+avatar(p.n,'lg')+'<div style="flex:1;min-width:200px"><h1>'+esc(p.n)+'</h1><p class="muted mono small">'+p.id+' · '+p.age+' años · '+esc(p.tel)+'</p><div class="chips" style="margin-top:8px">'+estPill(p.est)+riskPill(p.rk)+conPill(p)+'<span class="pill info">Próxima: '+nextTxt(p)+'</span></div></div>'+
    '<div class="chips"><button class="btn pri sm" data-a="go" data-r="sesiones">Nueva sesión</button><button class="btn sm" data-a="go" data-r="seguimiento">WhatsApp</button><button class="btn sm" data-a="go" data-r="portal">Vista del paciente</button><button class="btn sm" data-a="sum">Resumen para copiar</button></div></div></section>'+(S.sum&&S.sumPid===p.id?sumPanel():'')+
-   '<div class="tabs" role="tablist" aria-label="Expediente">'+tabs.map(function(t){return '<button role="tab" data-a="tab" data-t="'+t[0]+'" aria-selected="'+(S.tab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>'+
-   '<div role="tabpanel">'+T[S.tab](p)+'</div>';
+   '<div class="tabs" role="tablist" aria-label="Expediente">'+tabs.map(function(t){return '<button role="tab" data-a="tab" data-t="'+t[0]+'" aria-selected="'+(S.tab===t[0])+'">'+t[1]+(tabNeed(t[0])?planBadge(tabNeed(t[0])):'')+'</button>'}).join('')+'</div>'+
+   '<div role="tabpanel">'+(tabNeed(S.tab)?upsell(S.tab):T[S.tab](p))+'</div>';
 };
 var T={};
 T.res=function(p){
@@ -659,7 +662,7 @@ V.sesiones=function(){
   if(g==='ok')return h+'<div id="flowBody"></div>';
   return h+'<section class="card" style="max-width:640px"><div class="pn" style="gap:12px">'+avatar(p.n)+'<div><b>'+esc(p.n)+'</b><div class="small muted">'+p.id+'</div></div></div><p class="pill warn" style="margin-top:14px" role="status">'+(g==='care'?'Falta el consentimiento informado de este paciente. No se puede crear una sesión.':'Este paciente no autorizó la grabación de audio o el uso de IA. No se puede procesar la sesión con IA.')+'</p><div class="chips" style="margin-top:14px"><button class="btn pri" data-a="concta">Ir a Consentimiento</button></div></section>'};
 function flowGo(){
-  if(flowTimer||conGate(curPat())!=='ok')return;S.fl={st:'run',n:0};drawFlow();
+  if(flowTimer||routeNeed('sesiones')||conGate(curPat())!=='ok')return;S.fl={st:'run',n:0};drawFlow();
   var fast=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   flowTimer=setInterval(function(){S.fl.n++;if(S.fl.n>=FS.length){S.fl.st='done';clearInterval(flowTimer);flowTimer=null}if(S.route==='sesiones')drawFlow();else if(S.fl.st==='done'){}},fast?120:1050);
 }
@@ -837,8 +840,29 @@ V.facturacion=function(){
    '<section class="card"><h2>Cobros pendientes</h2><div class="tw"><table style="min-width:480px"><thead><tr><th>Factura</th><th>Paciente</th><th>Concepto</th><th>Fecha</th><th>Monto</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></section></div>';
 };
 function plans(){
-  var an=S.cyc==='y',P=[['Basic',19,['Pacientes','Agenda','Historia clínica']],['Pro',49,['Todo lo anterior','IA Clínica','SOAP automático','Seguimiento']],['Clínica',99,['Equipos','Dashboard ejecutivo','Supervisor IA','Reportes']]];
-  return '<div class="chips"><button class="chip" data-a="cyc" data-v="m" aria-pressed="'+!an+'">Mensual</button><button class="chip" data-a="cyc" data-v="y" aria-pressed="'+an+'">Anual (−20%)</button></div><div class="g3">'+P.map(function(x){var cur=x[0]==='Clínica';return '<section class="card plan'+(cur?' cur':'')+'"><div class="ch"><h2>'+x[0]+'</h2>'+(cur?'<span class="pill good">Plan actual</span>':'')+'</div><div class="pr">US$'+(an?Math.round(x[1]*.8):x[1])+'<span class="muted small" style="font:500 13px var(--f-body)"> /mes</span></div><ul>'+x[2].map(function(f){return '<li>'+f+'</li>'}).join('')+'</ul><button class="btn'+(cur?'':' pri')+'" data-a="demo" data-m="Cambio de plan simulado"'+(cur?' disabled':'')+'>'+(cur?'Plan actual':'Elegir '+x[0])+'</button></section>'}).join('')+'</div>';
+  var an=S.cyc==='y',P=[['basic',19,['Pacientes','Agenda','Historia clínica']],['pro',49,['Todo lo anterior','IA Clínica','SOAP automático','Seguimiento']],['clinica',99,['Equipos','Dashboard ejecutivo','Supervisor IA','Reportes']]];
+  return '<div class="chips"><button class="chip" data-a="cyc" data-v="m" aria-pressed="'+!an+'">Mensual</button><button class="chip" data-a="cyc" data-v="y" aria-pressed="'+an+'">Anual (−20%)</button></div><div class="g3">'+P.map(function(x){var k=x[0],cur=k===S.plan,up=PRANK[k]>PRANK[S.plan];return '<section class="card plan'+(cur?' cur':'')+'"><div class="ch"><h2>'+PNAME[k]+'</h2>'+(cur?'<span class="pill good">Plan actual</span>':'')+'</div><div class="pr">US$'+(an?Math.round(x[1]*.8):x[1])+'<span class="muted small" style="font:500 13px var(--f-body)"> /mes</span></div><ul>'+x[2].map(function(f){return '<li>'+f+'</li>'}).join('')+'</ul><button class="btn'+(up?' pri':'')+'" data-a="setplan" data-p="'+k+'"'+(cur?' disabled':'')+'>'+(cur?'Plan actual':(up?'Mejorar a ':'Cambiar a ')+PNAME[k])+'</button></section>'}).join('')+'</div><p class="note">Demo: el cambio de plan es simulado, no se cobra nada. Los módulos que el plan no incluye aparecen con un candado.</p>';
+}
+
+/* planes y candados */
+var PRANK={basic:1,pro:2,clinica:3},PNAME={basic:'Basic',pro:'Pro',clinica:'Clínica'};
+var RMIN={sesiones:'pro',ia:'pro',seguimiento:'pro',radar:'clinica',equipo:'clinica'};
+var TMIN={soap:'pro',ia:'pro'};
+var GAIN={
+ sesiones:['Audio de la sesión a transcripción y resumen','Nota SOAP generada para que la revises','Supervisor IA y plan de seguimiento'],
+ ia:['Resumen clínico asistido por IA','Alertas y sugerencias para cada paciente'],
+ seguimiento:['Mensajes de seguimiento por WhatsApp','Recordatorios y detección temprana de abandono'],
+ radar:['Radar de riesgo de abandono por paciente','Indicadores para priorizar la atención'],
+ equipo:['Vista de todo el equipo clínico','Pacientes, sesiones y retención por profesional'],
+ soap:['Nota SOAP automática a partir de la sesión','Revisión y aprobación por el profesional']};
+function routeNeed(r){var m=RMIN[r];return m&&PRANK[S.plan]<PRANK[m]?m:null}
+function tabNeed(t){var m=TMIN[t];return m&&PRANK[S.plan]<PRANK[m]?m:null}
+function planBadge(m){return '<span class="pb"><svg viewBox="0 0 24 24" width="11" height="11" aria-hidden="true"><path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>'+PNAME[m]+'<span class="sr"> (requiere el plan '+PNAME[m]+')</span></span>'}
+function upsell(k,full){
+  var m=routeNeed(k)||tabNeed(k),adm=S.user.r==='adm',g=GAIN[k]||[];
+  return '<section class="card" style="max-width:640px"><div class="ch"><h2>Disponible en el plan '+PNAME[m]+'</h2>'+planBadge(m)+'</div><p class="muted">Tu plan actual es <b>'+PNAME[S.plan]+'</b>. Con '+PNAME[m]+' ganas:</p><ul class="up">'+g.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul><div class="chips" style="margin-top:14px">'+
+   (adm?'<button class="btn pri" data-a="setplan" data-p="'+m+'">Mejorar a '+PNAME[m]+'</button><button class="btn" data-a="plans">Ver planes</button>':'<button class="btn pri" data-a="demo" data-m="Solicitud enviada al administrador (simulada)">Pedir al administrador</button>')+
+   (full?'<button class="btn" data-a="go" data-r="dashboard">Volver al dashboard</button>':'')+'</div><p class="note">Demo: el cambio de plan es simulado y no se cobra nada.</p></section>';
 }
 
 /* equipo */
@@ -866,16 +890,16 @@ function render(){
   if(!S.user){$('#view').innerHTML='';$('#nav').innerHTML='';$('#uchip').innerHTML='';$('#ttl').textContent='';lg.hidden=false;ap.hidden=true;return}
   lg.hidden=true;ap.hidden=false;
   var r=S.route,ok=allowed(r),nav=(r==='ficha'||r==='portal')?'pacientes':r;
-  $('#nav').innerHTML=R.filter(function(x){return allowed(x.id)}).map(function(x){return '<button data-a="go" data-r="'+x.id+'"'+(x.id===nav?' aria-current="page"':'')+'>'+icon(x.i)+x.l+'</button>'}).join('');
+  $('#nav').innerHTML=R.filter(function(x){return allowed(x.id)}).map(function(x){return '<button data-a="go" data-r="'+x.id+'"'+(x.id===nav?' aria-current="page"':'')+'>'+icon(x.i)+x.l+(routeNeed(x.id)?planBadge(routeNeed(x.id)):'')+'</button>'}).join('');
   $('#uchip').innerHTML=avatar(S.user.n)+'<div><b>'+esc(S.user.n)+'</b><span>'+S.user.rl+'</span></div>';
   var d=routeDef(r);$('#ttl').textContent=r==='ficha'?'Expediente clínico':r==='portal'?'Portal del paciente':(d?d.l:'');
   $('#menub').innerHTML=icon('menu');
   var dark=document.documentElement.getAttribute('data-theme')==='dark'||(!document.documentElement.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);
   $('#themeb').innerHTML=icon(dark?'sun':'moon');
   if(r!=='sesiones')flowStopIfIdle();
-  $('#view').innerHTML=ok?V[r]():V.locked();
+  $('#view').innerHTML=ok?(routeNeed(r)?upsell(r,true):V[r]()):V.locked();
   if(ok&&r==='pacientes')patRows();
-  if(ok&&r==='sesiones')drawFlow();
+  if(ok&&r==='sesiones'&&!routeNeed(r))drawFlow();
   if(ok&&r==='biblioteca')bibList();
   if(S.last!==r){window.scrollTo(0,0);S.last=r}
   closeMenu();drawTour();
@@ -956,6 +980,8 @@ var A={
  bs:function(e){S.bill.scope=e.dataset.v;render()},
  bt:function(e){S.bill.tab=e.dataset.v;render()},
  cyc:function(e){S.cyc=e.dataset.v;render()},
+ setplan:function(e){var k=e.dataset.p;if(!PNAME[k])return;S.plan=k;toast('Plan cambiado a '+PNAME[k]+' (simulado)');render()},
+ plans:function(){S.bill.tab='planes';go('facturacion')},
  conedit:function(){var p=curPat();delete S.cf[p.id];S.cedit=p.id;render()},
  concancel:function(){var p=curPat();delete S.cf[p.id];S.cedit=null;render()},
  conout:function(){var p=curPat();S.con[p.id]={st:'retirado',d:NOWTXT,by:S.user.n};delete S.cf[p.id];S.cedit=null;toast('Consentimiento retirado. Grabación e IA bloqueadas');render()},
