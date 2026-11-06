@@ -32,6 +32,6 @@ Demo navegable de un software de gestión para psicólogos y clínicas (Perú). 
 
 ## Pendiente / ideas
 - Barra de uso por plan (por ejemplo "pacientes 38 de 50"), si se quiere reforzar la diferencia entre planes.
-- Enlaces de búsqueda de SciELO, Redalyc y ALICIA en la Biblioteca: sin verificar. Los 6 oficiales del Colegio de Psicólogos sí están verificados.
+- Biblioteca: los 6 enlaces oficiales del Colegio y los patrones de búsqueda de SciELO Perú, Redalyc y ALICIA se verificaron el 6 nov 2026 (SciELO usa consultas con OR en B, E, I y K porque las de varias palabras daban 0 resultados; Redalyc carga los resultados con JavaScript, así que solo se comprobó que el patrón es el suyo). Conviene repetir la verificación cada cierto tiempo.
 - Probar en un iPhone o iPad reales (las pruebas solo emulan con Chrome).
 - Para producto real: servidor, autenticación, cifrado, registro de accesos, IA real, WhatsApp oficial, cobros y cumplimiento de la Ley 29733. El texto del consentimiento es de ejemplo y debe revisarlo un abogado.

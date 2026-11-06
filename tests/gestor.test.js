@@ -213,7 +213,9 @@ async function functional(browser) {
   ok((await p.$$('#bib > div')).length === 14, 'Biblioteca: 14 especialidades');
   const enl = await p.$$eval('#bib a.lk', (a) => a.map((x) => ({ h: x.href, t: x.target, r: x.rel })));
   ok(enl.length === 42 && enl.every((e) => e.h.startsWith('https://') && e.t === '_blank' && /noopener/.test(e.r) && /noreferrer/.test(e.r)), 'Biblioteca: 42 enlaces (3 por especialidad), todos https, en pestaña nueva y con noopener/noreferrer');
-  ok((await p.$$eval('#bib a.lk', (a) => a.filter((x) => /search\.scielo\.org/.test(x.href) && /q=psicolog%C3%ADa/.test(x.href)).length)) === 14, 'Biblioteca: la búsqueda de SciELO usa el término de cada especialidad');
+  const sc = await p.$$eval('#bib a.lk', (a) => a.filter((x) => /search\.scielo\.org/.test(x.href)).map((x) => decodeURIComponent(new URL(x.href).searchParams.get('q') || '')));
+  ok(sc.length === 14 && sc.every((q) => q.length > 3) && sc.filter((q) => / OR /.test(q)).length === 4 && new Set(sc).size === 14, 'Biblioteca: SciELO tiene una consulta distinta por especialidad (4 con OR para ampliar resultados)');
+  ok((await p.$$eval('#bib a.lk', (a) => a.filter((x) => /search\.scielo\.org/.test(x.href) && /filter%5Bin%5D%5B%5D=per/.test(x.href)).length)) === 14, 'Biblioteca: SciELO se limita a la colección de Perú');
   ok((await p.$$eval('#view section.card:nth-of-type(2) a.lk', (a) => a.length)) === 6, 'Biblioteca: 6 documentos oficiales del Colegio');
   await p.fill('#bq', 'deporte');
   ok((await p.$$('#bib > div')).length === 1, 'Biblioteca: buscar "deporte" deja 1 especialidad');
