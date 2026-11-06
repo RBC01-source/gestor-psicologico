@@ -22,6 +22,8 @@ const ok = (c, m) => { console.log((c ? '  ok    ' : '  FALLA ') + m); if (!c) f
   ok((await p.$$('main .plan')).length === 3, 'La supervisora ve la comparación de planes');
   ok(!(await p.$('[data-a="setplan"]')) && !(await p.$('[data-a="bt"][data-v="planes"]')), 'Sin botones para cambiar de plan ni pestaña de planes de administrador');
   ok(!/Admin GP|Administrador\/a|Mejorar a|Cambiar a/.test(await p.evaluate(() => document.body.innerText)), 'Comparación pública sin textos de administrador');
+  await p.click('main .plan button:not([disabled]) >> nth=0');
+  ok(await p.isVisible('#rnom') && !/Admin GP|Administrador\/a/.test(await p.evaluate(() => document.querySelector('#plansbox').innerText)), 'El registro simulado funciona en la versión pública');
   await browser.close();
   console.log(fallos ? 'Público: ' + fallos + ' fallan' : 'Público: todo correcto');
   process.exit(fallos ? 1 : 0);

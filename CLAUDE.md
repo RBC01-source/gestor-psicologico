@@ -18,7 +18,7 @@ Demo navegable de un software de gestión para psicólogos y clínicas (Perú). 
 - Eventos por delegación: botones con `data-a="accion"` y un mapa de acciones `A`. No hay manejadores en línea, ni `eval`, ni red, ni almacenamiento del navegador.
 - Roles: `psi`, `sup`, `adm`. El acceso se decide en `allowed()`. Cada psicólogo solo ve sus pacientes.
 - Fecha fija de la demo: 5 nov 2026, 10:12.
-- Módulos: dashboard, pacientes, expediente (Resumen, Sesiones, SOAP, Escalas GAD-7/PHQ-9, Consentimiento, Documentos, IA), agenda, flujo de IA, radar, WhatsApp, facturación y planes, equipo, Biblioteca, portal del paciente con reserva, Planes y precios (comparación visible para todos los roles, con barra de uso; también se abre desde el login con `pbopen`). Planes simulados: `S.plan` (basic/pro/clinica) con candados por módulo (`RMIN`) y por pestaña (`TMIN`); solo el administrador cambia el plan.
+- Módulos: dashboard, pacientes, expediente (Resumen, Sesiones, SOAP, Escalas GAD-7/PHQ-9, Consentimiento, Documentos, IA), agenda, flujo de IA, radar, WhatsApp, facturación y planes, equipo, Biblioteca, portal del paciente con reserva, Planes y precios (comparación visible para todos los roles, con barra de uso; también se abre desde el login con `pbopen`; "Quiero este plan" abre un registro simulado de 2 pasos, `regstart`/`regnext`, sin guardar nada). Planes simulados: `S.plan` (basic/pro/clinica) con candados por módulo (`RMIN`) y por pestaña (`TMIN`); solo el administrador cambia el plan.
 
 ## Reglas al cambiar cosas
 - Cuida el tema claro y oscuro (variables en `:root`), el contraste AA y los objetivos táctiles de 44 px.
