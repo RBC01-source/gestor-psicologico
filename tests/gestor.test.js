@@ -56,7 +56,7 @@ async function functional(browser) {
   // Roles y menú
   await login(p, 'carlos');
   let nav = await navLabels(p);
-  ok(nav.length === 10 && !nav.includes('Equipo Clínico') && nav.includes('Facturación'), 'Psicólogo: ve Facturación y no Equipo Clínico');
+  ok(nav.length === 11 && !nav.includes('Equipo Clínico') && nav.includes('Facturación') && nav.includes('Planes y precios'), 'Psicólogo: ve Facturación y Planes y precios, y no Equipo Clínico');
   const heading = await txt(p, '#view h1');
   ok(/Buenos días, Dr\. Carlos/.test(heading), 'Saludo con el nombre del usuario');
   const kp = await p.$$eval('.kpi', (k) => k.map((x) => x.innerText.replace(/\s+/g, ' ')));
@@ -278,13 +278,13 @@ async function functional(browser) {
   // Otros roles
   await login(p, 'patricia');
   nav = await navLabels(p);
-  ok(nav.includes('Equipo Clínico') && !nav.includes('Facturación'), 'Supervisora: ve Equipo y no Facturación');
+  ok(nav.includes('Equipo Clínico') && !nav.includes('Facturación') && nav.includes('Planes y precios'), 'Supervisora: ve Equipo y Planes y precios, y no Facturación');
   await go(p, 'pacientes');
   ok((await p.$$('#ptb tr.clk')).length === 13, 'Supervisora ve los 13 pacientes de ejemplo');
   await p.click('#outb');
   await login(p, 'admin');
   nav = await navLabels(p);
-  ok(nav.length === 11, 'Administrador ve los 11 módulos');
+  ok(nav.length === 12, 'Administrador ve los 12 módulos');
   await go(p, 'facturacion');
   await p.click('[data-a="bs"][data-v="clinic"]');
   ok((await txt(p, 'main')).includes('US$ 24,380'), 'Admin: facturación de clínica completa US$ 24,380');
@@ -324,6 +324,30 @@ async function functional(browser) {
   ok((await txt(p, 'main')).includes('Pedir al administrador') && !(await p.$('[data-a="setplan"]')), 'Psicólogo sin permiso de administrador: puede pedir la mejora pero no cambiar el plan');
   await p.click('[data-a="logout"]'); await login(p, 'admin');
   await go(p, 'facturacion'); await p.click('[data-a="bt"][data-v="planes"]'); await p.click('[data-a="setplan"][data-p="clinica"]');
+
+  // Comparador de planes: lo ven todos, solo el administrador cambia el plan
+  await go(p, 'planes');
+  ok((await p.$$('main .plan')).length === 3 && (await p.$$('main .cmp tbody tr')).length === 12, 'Planes y precios: 3 planes y tabla de 12 filas');
+  ok((await p.$$('main [data-a="setplan"]')).length === 2, 'Admin: puede cambiar a los otros dos planes desde Planes y precios');
+  await p.click('main [data-a="setplan"][data-p="basic"]');
+  ok((await txt(p, 'main')).includes('38 de 50') && (await p.$eval('main [role="progressbar"]', (m) => m.getAttribute('aria-valuenow') === '38' && m.getAttribute('aria-valuemax') === '50')), 'Plan Basic: barra de uso "38 de 50"');
+  await p.click('main [data-a="setplan"][data-p="clinica"]');
+  ok((await txt(p, 'main')).includes('Sin límite de pacientes') || (await txt(p, 'main')).includes('no tiene límite'), 'Plan Clínica: sin límite de pacientes');
+  await p.click('[data-a="logout"]'); await login(p, 'carlos');
+  await go(p, 'planes');
+  ok((await p.$$('main .plan')).length === 3 && !(await p.$('main [data-a="setplan"]')), 'Psicólogo: ve los 3 planes y no puede cambiar el plan');
+  const quiero = await p.$$eval('main .plan button:not([disabled])', (b) => b.map((x) => x.textContent.replace(/\s+/g, ' ').trim()));
+  ok(quiero.length === 2 && quiero.every((t) => t.startsWith('Quiero este plan')), `Psicólogo: botón "Quiero este plan" en los otros planes (${quiero})`);
+  await p.click('main .plan button:not([disabled])');
+  ok((await txt(p, '#toast')).includes('se abre el pago'), 'Quiero este plan: aviso simulado de pago');
+  await go(p, 'sesiones');
+  await p.click('[data-a="logout"]');
+  await p.click('[data-a="pbopen"]');
+  ok(await p.isVisible('#plansbox') && (await p.$$('#plansbox .plan')).length === 3 && !(await p.$('#plansbox .plan.cur')), 'Login: "Ver planes y precios" abre la comparación sin marcar plan actual');
+  ok(await p.evaluate(() => document.activeElement.id === 'pbx'), 'Comparación en login: el foco pasa al botón Cerrar');
+  await p.keyboard.press('Escape');
+  ok(!(await p.isVisible('#plansbox')) && await p.evaluate(() => document.activeElement.dataset.a === 'pbopen'), 'Escape cierra la comparación y devuelve el foco');
+  await login(p, 'admin');
 
   await go(p, 'equipo');
   ok((await txt(p, 'main')).includes('243') && (await txt(p, 'main')).includes('518'), 'Equipo muestra 243 pacientes y 518 sesiones');
@@ -409,7 +433,7 @@ async function security(browser) {
 }
 
 /* ============ 3. USABILIDAD (usuario simulado) ============ */
-const ROUTES = { psi: ['dashboard', 'pacientes', 'agenda', 'sesiones', 'ia', 'biblioteca', 'radar', 'seguimiento', 'facturacion', 'config'], adm: ['dashboard', 'pacientes', 'agenda', 'sesiones', 'ia', 'biblioteca', 'radar', 'seguimiento', 'facturacion', 'equipo', 'config'] };
+const ROUTES = { psi: ['dashboard', 'pacientes', 'agenda', 'sesiones', 'ia', 'biblioteca', 'radar', 'seguimiento', 'facturacion', 'planes', 'config'], adm: ['dashboard', 'pacientes', 'agenda', 'sesiones', 'ia', 'biblioteca', 'radar', 'seguimiento', 'facturacion', 'planes', 'equipo', 'config'] };
 
 async function clickability(page, label, minH) {
   return page.evaluate(({ minH }) => {

@@ -17,7 +17,11 @@ const ok = (c, m) => { console.log((c ? '  ok    ' : '  FALLA ') + m); if (!c) f
     await p.evaluate((h) => { location.hash = h; }, r); await p.waitForTimeout(80);
     ok((await p.evaluate(() => document.querySelector('main').innerText)).includes('Acceso restringido'), 'La supervisora no accede a #' + r);
   }
-  ok(!(await p.evaluate(() => document.body.innerText)).includes('Planes'), 'No aparece la pestaña de planes');
+  await p.evaluate(() => { location.hash = 'facturacion'; }); await p.waitForTimeout(80);
+  await p.evaluate(() => { location.hash = 'planes'; }); await p.waitForTimeout(80);
+  ok((await p.$$('main .plan')).length === 3, 'La supervisora ve la comparación de planes');
+  ok(!(await p.$('[data-a="setplan"]')) && !(await p.$('[data-a="bt"][data-v="planes"]')), 'Sin botones para cambiar de plan ni pestaña de planes de administrador');
+  ok(!/Admin GP|Administrador\/a|Mejorar a|Cambiar a/.test(await p.evaluate(() => document.body.innerText)), 'Comparación pública sin textos de administrador');
   await browser.close();
   console.log(fallos ? 'Público: ' + fallos + ' fallan' : 'Público: todo correcto');
   process.exit(fallos ? 1 : 0);

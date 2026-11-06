@@ -18,7 +18,7 @@ Demo navegable de un software de gestión para psicólogos y clínicas (Perú). 
 - Eventos por delegación: botones con `data-a="accion"` y un mapa de acciones `A`. No hay manejadores en línea, ni `eval`, ni red, ni almacenamiento del navegador.
 - Roles: `psi`, `sup`, `adm`. El acceso se decide en `allowed()`. Cada psicólogo solo ve sus pacientes.
 - Fecha fija de la demo: 5 nov 2026, 10:12.
-- Módulos: dashboard, pacientes, expediente (Resumen, Sesiones, SOAP, Escalas GAD-7/PHQ-9, Consentimiento, Documentos, IA), agenda, flujo de IA, radar, WhatsApp, facturación y planes, equipo, Biblioteca, portal del paciente con reserva. Planes simulados: `S.plan` (basic/pro/clinica) con candados por módulo (`RMIN`) y por pestaña (`TMIN`); solo el administrador cambia el plan.
+- Módulos: dashboard, pacientes, expediente (Resumen, Sesiones, SOAP, Escalas GAD-7/PHQ-9, Consentimiento, Documentos, IA), agenda, flujo de IA, radar, WhatsApp, facturación y planes, equipo, Biblioteca, portal del paciente con reserva, Planes y precios (comparación visible para todos los roles, con barra de uso; también se abre desde el login con `pbopen`). Planes simulados: `S.plan` (basic/pro/clinica) con candados por módulo (`RMIN`) y por pestaña (`TMIN`); solo el administrador cambia el plan.
 
 ## Reglas al cambiar cosas
 - Cuida el tema claro y oscuro (variables en `:root`), el contraste AA y los objetivos táctiles de 44 px.
@@ -31,7 +31,6 @@ Demo navegable de un software de gestión para psicólogos y clínicas (Perú). 
 - Existe además una copia privada en un artefacto de Claude. Eso no depende del repositorio.
 
 ## Pendiente / ideas
-- Barra de uso por plan (por ejemplo "pacientes 38 de 50"), si se quiere reforzar la diferencia entre planes.
 - Biblioteca: los 6 enlaces oficiales del Colegio y los patrones de búsqueda de SciELO Perú, Redalyc y ALICIA se verificaron el 6 nov 2026 (SciELO usa consultas con OR en B, E, I y K porque las de varias palabras daban 0 resultados; Redalyc carga los resultados con JavaScript, así que solo se comprobó que el patrón es el suyo). Conviene repetir la verificación cada cierto tiempo.
 - Probar en un iPhone o iPad reales (las pruebas solo emulan con Chrome).
 - Para producto real: servidor, autenticación, cifrado, registro de accesos, IA real, WhatsApp oficial, cobros y cumplimiento de la Ley 29733. El texto del consentimiento es de ejemplo y debe revisarlo un abogado.
