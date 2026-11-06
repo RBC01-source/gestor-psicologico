@@ -439,7 +439,7 @@ function routeDef(id){for(var i=0;i<R.length;i++)if(R[i].id===id)return R[i];ret
 function allowed(id){if(id==='ficha'||id==='portal')return true;var d=routeDef(id);return !!(d&&S.user&&d.ro.split(' ').indexOf(S.user.r)>-1)}
 
 /* ---------- estado ---------- */
-var S={user:null,pick:'carlos',route:'dashboard',pid:'PAC-0001',tab:'res',fil:'all',q:'',cal:{y:2026,m:10,d:5},fl:{st:'idle',n:0},wa:'ask',bill:{scope:'me',tab:'res'},cyc:'m',rad:'PAC-0001',chat:[],auto:{a:true,b:true,c:true,d:false,e:true},tour:{on:false,i:0},last:'',plan:'clinica',con:{},cf:{},cedit:null,scl:'gad',ans:{},hist:{},extra:[],slot:null,booked:null,sum:null,sumPid:null,pbox:false};
+var S={user:null,pick:'carlos',route:'dashboard',pid:'PAC-0001',tab:'res',fil:'all',q:'',cal:{y:2026,m:10,d:5},fl:{st:'idle',n:0},wa:'ask',bill:{scope:'me',tab:'res'},cyc:'m',rad:'PAC-0001',chat:[],auto:{a:true,b:true,c:true,d:false,e:true},tour:{on:false,i:0},last:'',plan:'clinica',con:{},cf:{},cedit:null,scl:'gad',ans:{},hist:{},extra:[],slot:null,booked:null,sum:null,sumPid:null,pbox:false,reg:null};
 var flowTimer=null,toastTimer=null;
 
 function vis(){return PT.filter(function(p){return S.user.sc==='all'||p.own===S.user.id})}
@@ -877,7 +877,7 @@ function upsell(k,full){
 
 /* comparador de planes (lo ven todos los perfiles; solo el administrador cambia el plan) */
 var PTAG={basic:'Para ordenar tu consulta',pro:'Para ahorrar tiempo con IA',clinica:'Para equipos y clínicas'};
-var PLIM={basic:50,pro:150,clinica:0};
+var PLIM={basic:50,pro:150,clinica:0},PPRICE={basic:19,pro:49,clinica:99};
 var PFEAT=[
  ['Pacientes activos','Hasta 50','Hasta 150','Sin límite'],
  ['Profesionales','1','1','Hasta 10'],
@@ -900,10 +900,10 @@ function usageBox(){
   return '<section class="card"><h2>Uso de tu plan</h2><p class="muted">Pacientes activos: <b>'+used+' de '+l+'</b> ('+pc+'%) · Plan '+PNAME[S.plan]+'</p><div class="meter" role="progressbar" aria-label="Pacientes activos: '+used+' de '+l+'" aria-valuemin="0" aria-valuemax="'+l+'" aria-valuenow="'+used+'"><i style="width:'+pc+'%"></i></div></section>';
 }
 function planCompare(){
-  var an=S.cyc==='y',adm=S.user&&S.user.r==='adm',K=['basic','pro','clinica'],PR={basic:19,pro:49,clinica:99};
+  var an=S.cyc==='y',adm=S.user&&S.user.r==='adm',K=['basic','pro','clinica'],PR=PPRICE;
   var cards=K.map(function(k){
     var cur=!!S.user&&k===S.plan,up=!!S.user&&PRANK[k]>PRANK[S.plan];
-    var btn=cur?'<button class="btn" disabled>Plan actual</button>':adm?'<button class="btn'+(up?' pri':'')+'" data-a="setplan" data-p="'+k+'">'+(up?'Mejorar a ':'Cambiar a ')+PNAME[k]+'</button>':'<button class="btn'+(k==='pro'?' pri':'')+'" data-a="demo" data-m="En la versión real aquí se abre el pago (simulado)">Quiero este plan<span class="sr"> '+PNAME[k]+'</span></button>';
+    var btn=cur?'<button class="btn" disabled>Plan actual</button>':adm?'<button class="btn'+(up?' pri':'')+'" data-a="setplan" data-p="'+k+'">'+(up?'Mejorar a ':'Cambiar a ')+PNAME[k]+'</button>':'<button class="btn'+(k==='pro'?' pri':'')+'" data-a="regstart" data-p="'+k+'">Quiero este plan<span class="sr"> '+PNAME[k]+'</span></button>';
     return '<section class="card plan'+(cur?' cur':'')+'"><div class="ch"><h2>'+PNAME[k]+'</h2>'+(cur?'<span class="pill good">Plan actual</span>':'')+'</div><p class="tag">'+PTAG[k]+'</p><div class="pr">US$'+(an?Math.round(PR[k]*.8):PR[k])+'<span class="muted small" style="font:500 13px var(--f-body)"> /mes</span></div>'+btn+'</section>';
   }).join('');
   var rows=PFEAT.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+pcell(r[1])+'</td><td>'+pcell(r[2])+'</td><td>'+pcell(r[3])+'</td></tr>'}).join('');
@@ -913,11 +913,50 @@ function planCompare(){
    '<p class="note">Demo: los precios y límites son de ejemplo y no se cobra nada. '+(adm?'Como administrador puedes cambiar el plan para ver qué módulos se bloquean.':'El cambio de plan lo hace el administrador de la cuenta.')+'</p>';
 }
 V.planes=function(){return '<div class="hd2"><div><h1>Planes y precios</h1><p>Compara qué incluye cada plan.</p></div></div>'+planCompare()};
+var PAYS=[['tarjeta','Tarjeta'],['yape','Yape'],['plin','Plin'],['transf','Transferencia']];
+function regTotal(k){var an=S.cyc==='y',m=an?Math.round(PPRICE[k]*.8):PPRICE[k];return an?'US$ '+(m*12)+' al año (US$ '+m+' /mes)':'US$ '+m+' al mes'}
+function regForm(){
+  var r=S.reg,v=r.v,k=r.p,err=r.err?'<div class="small" role="alert" style="color:var(--crit)">'+esc(r.err)+'</div>':'';
+  var note='<p class="note">Demo: no escribas datos reales. No se guarda ni se envía nada.</p>';
+  if(r.step===1)return '<p class="muted">Paso 1 de 2 · Tus datos · Plan '+PNAME[k]+'</p><div class="g2"><div><label class="lb" for="rnom">Nombre completo</label><input class="input" id="rnom" autocomplete="off" maxlength="80" value="'+esc(v.nom||'')+'"></div><div><label class="lb" for="rmail">Correo electrónico</label><input class="input" id="rmail" type="email" inputmode="email" autocomplete="off" maxlength="80" value="'+esc(v.mail||'')+'"></div><div><label class="lb" for="rcp">N.º de colegiatura (CPsP)</label><input class="input" id="rcp" inputmode="numeric" autocomplete="off" maxlength="6" value="'+esc(v.cp||'')+'"></div></div>'+err+
+   '<div class="chips"><button class="btn pri" data-a="regnext">Continuar</button><button class="btn" data-a="pbclose">Cancelar</button></div>'+note;
+  if(r.step===2)return '<p class="muted">Paso 2 de 2 · Pedido y pago</p><section class="card"><div class="ch"><h2>Plan '+PNAME[k]+'</h2></div><p>'+regTotal(k)+'</p><p class="note">Hoy no se cobra nada: es una simulación.</p></section>'+
+   '<fieldset class="q"><legend>Forma de pago</legend><div class="opts">'+PAYS.map(function(x){return '<label><input type="radio" name="rpay" value="'+x[0]+'"'+(v.pay===x[0]?' checked':'')+'>'+x[1]+'</label>'}).join('')+'</div></fieldset>'+
+   '<fieldset class="q"><legend>Comprobante</legend><div class="opts" style="grid-template-columns:repeat(2,minmax(0,1fr))"><label><input type="radio" name="rdoc" value="boleta"'+(v.doc==='boleta'?' checked':'')+'>Boleta</label><label><input type="radio" name="rdoc" value="factura"'+(v.doc==='factura'?' checked':'')+'>Factura</label></div></fieldset>'+
+   '<div id="rrucw"'+(v.doc==='factura'?'':' hidden')+'><label class="lb" for="rruc">RUC (11 dígitos)</label><input class="input" id="rruc" inputmode="numeric" autocomplete="off" maxlength="11" value="'+esc(v.ruc||'')+'"></div>'+
+   '<fieldset class="ckset"><legend class="sr">Términos</legend><label class="ck"><input type="checkbox" name="rterm"'+(v.term?' checked':'')+'><span class="bx" aria-hidden="true"></span><span>Acepto los términos y la política de privacidad (texto de ejemplo).</span></label></fieldset>'+err+
+   '<div class="chips"><button class="btn pri" data-a="regnext">Confirmar pedido (simulado)</button><button class="btn" data-a="regback">Atrás</button></div>'+note;
+  return '<section class="card"><h2>¡Listo, '+esc((v.nom||'').trim().split(/\s+/)[0])+'!</h2><p>Tu cuenta con el plan <b>'+PNAME[k]+'</b> quedó creada (simulada). En la versión real recibirías un correo en <b>'+esc(v.mail||'')+'</b> para confirmar y empezar a usar el sistema.</p><p class="note">No se guardó ni se envió nada.</p></section><div class="chips"><button class="btn pri" data-a="pbclose">Cerrar</button></div>';
+}
+function regFocus(){var h=$('#pbt');if(h)h.focus()}
+function regNext(){
+  var r=S.reg,v=r.v;r.err='';
+  if(r.step===1){
+    if((v.nom||'').trim().length<3)r.err='Escribe tu nombre completo.';
+    else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v.mail||'').trim()))r.err='Escribe un correo válido.';
+    else if(!/^\d{4,6}$/.test((v.cp||'').trim()))r.err='El número de colegiatura tiene entre 4 y 6 dígitos.';
+    if(!r.err)r.step=2;
+  }else if(r.step===2){
+    if(v.doc==='factura'&&!/^\d{11}$/.test((v.ruc||'').trim()))r.err='El RUC tiene 11 dígitos.';
+    else if(!v.term)r.err='Debes aceptar los términos para continuar.';
+    if(!r.err)r.step=3;
+  }
+  drawPlansBox();regFocus();
+}
+document.addEventListener('input',function(ev){
+  if(!S.reg)return;var t=ev.target,m={rnom:'nom',rmail:'mail',rcp:'cp',rruc:'ruc'}[t.id];if(m)S.reg.v[m]=t.value.slice(0,80);
+});
+document.addEventListener('change',function(ev){
+  if(!S.reg)return;var t=ev.target;
+  if(t.name==='rpay')S.reg.v.pay=t.value;
+  if(t.name==='rdoc'){S.reg.v.doc=t.value;var w=$('#rrucw');if(w)w.hidden=t.value!=='factura'}
+  if(t.name==='rterm')S.reg.v.term=t.checked;
+});
 var pbPrev=null;
 function drawPlansBox(){
   var b=$('#plansbox');if(!b)return;
   if(!S.pbox){b.hidden=true;b.innerHTML='';return}
-  b.innerHTML='<div class="pm-in"><div class="ch"><h2 id="pbt" style="font-size:22px">Planes y precios</h2><button class="btn sm" data-a="pbclose" id="pbx">Cerrar</button></div>'+planCompare()+'</div>';
+  b.innerHTML='<div class="pm-in"><div class="ch"><h2 id="pbt" tabindex="-1" style="font-size:22px">'+(S.reg?'Crear cuenta':'Planes y precios')+'</h2><button class="btn sm" data-a="pbclose" id="pbx">Cerrar</button></div>'+(S.reg?regForm():planCompare())+'</div>';
   b.hidden=false;
 }
 
@@ -1012,7 +1051,7 @@ function doLogin(){
   render();$('#view').focus({preventScroll:true});
 }
 function logout(){
-  flowStop();S.user=null;S.pbox=false;S.tour.on=false;$('#tourbox').hidden=true;
+  flowStop();S.user=null;S.pbox=false;S.reg=null;S.tour.on=false;$('#tourbox').hidden=true;
   history.replaceState(null,'',location.pathname+location.search);
   render();drawRoles();$('#lgo').focus();
 }
@@ -1045,7 +1084,10 @@ var A={
  concta:function(){S.pid=curPat().id;S.tab='con';go('ficha')},
  demo:function(e){toast(e.dataset.m)},
  pbopen:function(){pbPrev=document.activeElement;S.pbox=true;drawPlansBox();var x=$('#pbx');if(x)x.focus()},
- pbclose:function(){S.pbox=false;drawPlansBox();if(pbPrev&&pbPrev.focus&&document.contains(pbPrev))pbPrev.focus();pbPrev=null},
+ regstart:function(e){var k=e.dataset.p;if(!PNAME[k])return;if(!S.pbox){pbPrev=document.activeElement;S.pbox=true}S.reg={p:k,step:1,err:'',v:{pay:'tarjeta',doc:'boleta'}};drawPlansBox();regFocus()},
+ regnext:function(){regNext()},
+ regback:function(){S.reg.step=1;S.reg.err='';drawPlansBox();regFocus()},
+ pbclose:function(){S.pbox=false;S.reg=null;drawPlansBox();if(pbPrev&&pbPrev.focus&&document.contains(pbPrev))pbPrev.focus();pbPrev=null},
  theme:function(){var h=document.documentElement,dark=h.getAttribute('data-theme')==='dark'||(!h.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);h.setAttribute('data-theme',dark?'light':'dark');render()},
  menu:function(){$('#side').classList.toggle('open');$('#scrim').classList.toggle('on')},
  logout:function(){logout()},
